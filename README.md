@@ -14,6 +14,21 @@ En enkel, statisk nettside for å presentere egne tekster som prosa, sangtekster
 2. Rediger tekstene i `script.js` for å bytte ut eksempelinnhold med ditt eget.
 3. Oppdater kontaktinformasjonen i `index.html`.
 
+### Enklere redigering av tekster
+
+I `script.js` kan du nå skrive selve teksten i en blokk med backticks:
+
+```js
+body: `
+	Første linje
+	Andre linje
+
+	Nytt vers eller nytt avsnitt
+`
+```
+
+En tom linje lager et nytt avsnitt eller vers i visningen. Du trenger ikke lenger legge hvert avsnitt i egne anførselstegn.
+
 ## Skjult publisering på tresfjording.no
 
 Siden er nå forberedt med to grep som gjør den vanskeligere å finne:

@@ -443,6 +443,7 @@ h2 {
 
 .dialog-body p {
   margin: 0 0 16px;
+  white-space: pre-line;
 }
 
 .is-hidden {
