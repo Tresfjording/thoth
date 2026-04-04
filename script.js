@@ -259,8 +259,8 @@ men inntil det blir bedre tider hær på jor'n
 går i i kjeldress,  innerst inni fjor'n
 
     `
-  }
-  {
+  },
+  { 
     title: "Jeg er bokser, jeg",
     type: "Revyvise",
     label: "Sangtekst",
