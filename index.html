@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="no">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Thoth | Mine ord</title>
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />
+    <meta
+      name="description"
+      content="Et sted for prosa, sangtekster og andre tekster samlet i ett uttrykk."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="site-header">
+        <a class="brand" href="#top" aria-label="Gå til toppen">
+          <span class="brand-mark">Thoth</span>
+          <span class="brand-subtitle">Mine ord</span>
+        </a>
+        <nav class="site-nav" aria-label="Hovednavigasjon">
+          <a href="#samling">Samling</a>
+          <a href="#om">Om teksten</a>
+          <a href="#kontakt">Kontakt</a>
+        </nav>
+      </header>
+
+      <main id="top">
+        <section class="hero">
+          <div class="hero-copy">
+            <p class="eyebrow">Tekster i flere former</p>
+            <h1>Et digitalt rom for prosa, sangtekster og alt som ikke passer i én sjanger.</h1>
+            <p class="hero-lead">
+              Denne siden er bygget for å presentere tekster med ro, tyngde og tydelig struktur.
+              Du kan fremheve nye utgivelser, sortere på format og la hver tekst få et eget rom.
+            </p>
+            <div class="hero-actions">
+              <a class="button button-primary" href="#samling">Utforsk tekstene</a>
+              <a class="button button-secondary" href="#kontakt">Ta kontakt</a>
+            </div>
+          </div>
+          <aside class="hero-panel" aria-label="Utvalgt tekst">
+            <p class="panel-label">Utvalgt utsnitt</p>
+            <blockquote>
+              Ordene kommer sjelden som svar. De kommer som spor, som lys over våt asfalt,
+              som noe som ber om å bli lest langsomt.
+            </blockquote>
+            <p class="panel-meta">Fra en prosatekst i arbeid</p>
+          </aside>
+        </section>
+
+        <section class="stats-strip" aria-label="Oversikt">
+          <article>
+            <span class="stat-number">3</span>
+            <span class="stat-label">tekstformater klare</span>
+          </article>
+          <article>
+            <span class="stat-number">6</span>
+            <span class="stat-label">eksempeltekster på plass</span>
+          </article>
+          <article>
+            <span class="stat-number">1</span>
+            <span class="stat-label">visuell retning å bygge videre på</span>
+          </article>
+        </section>
+
+        <section class="collection" id="samling">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Samling</p>
+              <h2>Tekstene dine, sortert uten å bli strømlinjeformet.</h2>
+            </div>
+            <p>
+              Filtrer mellom formater og la besøkende lese korte utdrag før de går videre til
+              hele teksten eller en separat underside senere.
+            </p>
+          </div>
+
+          <div class="filter-bar" role="toolbar" aria-label="Filtrer tekster">
+            <button class="filter-button is-active" data-filter="all" type="button">Alle</button>
+            <button class="filter-button" data-filter="prosa" type="button">Prosa</button>
+            <button class="filter-button" data-filter="sangtekst" type="button">Sangtekster</button>
+            <button class="filter-button" data-filter="annet" type="button">Annet</button>
+          </div>
+
+          <div class="cards-grid" id="cards-grid" aria-live="polite"></div>
+        </section>
+
+        <section class="about" id="om">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Om teksten</p>
+              <h2>En presentasjonsside som tåler både stillhet og variasjon.</h2>
+            </div>
+            <p>
+              Uttrykket her er ment å være litterært, men ikke nostalgisk. Typografi og flater
+              skal løfte teksten uten å gjøre siden tung å vedlikeholde.
+            </p>
+          </div>
+
+          <div class="about-grid">
+            <article>
+              <h3>Bygget for lesning</h3>
+              <p>
+                Store overskrifter, rolige kontraster og luftige tekstflater gjør at innholdet får
+                være sentrum i stedet for dekorasjon.
+              </p>
+            </article>
+            <article>
+              <h3>Lett å utvide</h3>
+              <p>
+                Tekstkortene hentes fra én dataliste i JavaScript. Du kan legge til, redigere eller
+                fjerne tekster uten å endre layouten.
+              </p>
+            </article>
+            <article>
+              <h3>Klar for neste steg</h3>
+              <p>
+                Hvis du senere vil ha egne undersider, publisering eller et CMS, er dette et godt
+                visuelt og strukturelt utgangspunkt.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section class="contact" id="kontakt">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Kontakt</p>
+              <h2>Gi leseren en enkel vei inn.</h2>
+            </div>
+            <p>
+              Erstatt teksten under med e-post, sosiale medier eller informasjon om kommende
+              opplesninger og utgivelser.
+            </p>
+          </div>
+
+          <div class="contact-card">
+            <p class="contact-title">Ønsker du tilbakemeldinger, samarbeid eller kontakt?</p>
+            <a href="mailto:navn@example.com">navn@example.com</a>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <template id="text-card-template">
+      <article class="text-card">
+        <p class="text-card-type"></p>
+        <h3 class="text-card-title"></h3>
+        <p class="text-card-intro"></p>
+        <div class="text-card-footer">
+          <span class="text-card-tag"></span>
+          <button class="text-card-button" type="button">Les utdrag</button>
+        </div>
+      </article>
+    </template>
+
+    <dialog class="text-dialog" id="text-dialog">
+      <form method="dialog" class="dialog-panel">
+        <button class="dialog-close" type="submit" aria-label="Lukk">Lukk</button>
+        <p class="dialog-type" id="dialog-type"></p>
+        <h3 id="dialog-title"></h3>
+        <p class="dialog-meta" id="dialog-meta"></p>
+        <div class="dialog-body" id="dialog-body"></div>
+      </form>
+    </dialog>
+
+    <script src="script.js"></script>
+  </body>
+</html>
