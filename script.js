@@ -177,27 +177,87 @@ Værs 3g med skifte til A-dur
     `
   },
   {
-    title: "Før refrenget",
-    type: "sangtekst",
+    title: "Fanthammar'n",
+    type: "Revyvise",
     label: "Sangtekst",
-    intro: "Et tekstutkast med tydelig versstruktur og et mer direkte, muntlig språk.",
-    meta: "Arbeidstittel",
+    intro: "En sang om en virkelig hendle i Tresfjord for mange mange år sia",
+    meta: "Lagt til tone av Boby Bares Millers Cave",
     body: `
-      Jeg teller ikke dagene lenger, bare hvordan lyset flytter seg over kjøkkenbordet når du ikke er her.
+      Lengst ner’i sør, innst inn i fjora
+Ova i huuuuus å heimegard
+Der kor Klæva vææææks, rakt opp i være
+Den dagjin dauin’ hadde fest på Fanthammar’n
 
-      Hvis dette er stillhet, hvorfor høres den ut som noe som venter på et refreng?
+Litt utpå daaaaa’n, der inn’i fjora
+Dokka faaaaaaant’n, plutsle fram
+Han sikta bæææænt, rett inn i aue
+Men løkka krute det va vått, på Fanthammar’n
+
+Så dasar’n heeeeeeeeeiv, opp si eia børse
+Og mæ et smeeeeeeeeell, datt fant’n om
+Mæ gull og pææææææng, i alle lomman
+Den dagjin dauin’ hadde fæst på Fanthammar’n
+
+Å lænsmann saaaaa om denna skatt’n
+At du kan gjæææær mæ’n ka du vell
+So’n ga’n te hooooo, Kari darsarn
+Den dagjin dauin’ hadde fest på Fanthammar’n
+
+
+No velle’n gjeeeeeeefte se mæ damå
+Mæn ho Kari faaaaaannnnj se anna mannj
+Dæ tok mæ skaaaatt’n te søre møre
+Dær dæ levde lenge på æt skot frå Fanthammer’n
+
     `
   },
   {
-    title: "Marginer",
-    type: "annet",
-    label: "Fragment",
-    intro: "Korte tekstfragmenter for tanker som ikke vil bli hele fortellinger, men likevel må få plass.",
-    meta: "Serie under utvikling",
+    title: "Mannj i grønt",
+    type: "Revyvise",
+    label: "Sangtekst",
+    intro: "En vise om bøndens streven og klagan",
+    meta: "Basert på J. Cash - I walk the line. Fremført på Tresfjordrevyen",
     body: `
-      Noen setninger skal ikke avsluttes. De skal stå åpne, som vinduer i et hus man fortsatt bor i.
+     Vell du vete koffor i allti gjæng i grønt
+Du synes væl  andre fargå e so skjønt
+Å koffer tur’du i gjeng i kjeldræss hæle dan
+Well, det e æn grunn ta at i gjeng i sa kle’an
 
-      Det er i marginene stemmen ofte er mest sann. Der den ikke prøver å bli sitert.
+I gjeng i grønt for frua ut på gar’n
+So må trakke rundt i silo’n hæle da’n
+I gjeng i grønt fer bondinj so he obetarte lån
+Mæn han e nøddj å ha dæm, det e et jævla hån
+
+Grønt for dæm so alder he slått gras
+Eller hoppa rundt i høye mæ Lill Babs
+Det handla om alt grønt som gjer mat i alle fat
+Og alle so gjeng svoltne uten mat
+
+Du trur væl årets oppgjær, det gjeng bra
+Men staten sæ no agrakadabra
+Og dermed set’n fattig at å lure på ka’n he
+Mens æ’n væt at det bankjin so he det
+
+I gjeng i grønt for single farmera
+Som må på tv’n for å skaffe seg damer’a
+Når sjåvet so er over og kjærlighæta dør
+Set’n att like ænsom so før
+
+I gjeng i grønt for dæm so he knekt a
+Ryggen under slit på åkera
+Fer dem so he et yrke Vår Herre glemte a
+Men som skattevesne kom å ødela
+
+I væt at ting vell alder bli hælt rætt
+Te lags åt alle det he jo vore fætt
+Men innte det at det blir bellegare brø
+Vell du aldre se me i æn kjeldress so e rø
+
+I skulle gått i smoking hæle da’n
+gått rundt der å rett og slett gjett fan
+men inntil det blir bedre tider hær på jor’n
+går i i kjeldress,  innerst inni fjor’n
+
     `
   }
 ].map((text) => ({
