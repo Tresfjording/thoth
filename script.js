@@ -260,6 +260,53 @@ går i i kjeldress,  innerst inni fjor'n
 
     `
   }
+  {
+    title: "Jeg er bokser, jeg",
+    type: "Revyvise",
+    label: "Sangtekst",
+    intro: "En boksers vei til seier",
+    meta: "Melodi etter en gammel skillingsvise, Fremført på julebordet til Dahs Bokhandel julen 1999",
+    body: `
+    Jeg er bokser, jeg
+
+
+Jeg lurer på om du har hørt om Store-John med vorten
+hei fadderi og fadderullan dei
+Han har vore champion fra nitten hundre og fjorten
+hei fadderi og fadderullan dei
+Han kom hit fra Amerika - kraftig stor og brei
+Men jeg sørget for han reiste hjem på krykker, jeg
+hei fadderi og fadderullan dei
+
+Vi møttes ne'på Ringebu med rykninger i hofta
+Jeg jumpa inn i ringen, gitt, og vrengte lusekofta
+Han så ut som ei kran - lukta fisk og banan
+Og ikke va' han vakker, han var styggere enn faen
+
+Han var en skummel type av den gamle skumle sorten
+Han sparka meg i trynet så jeg våkna ner'i lorten
+Men dommer'n var blind - han så ingen ting
+Jeg dunka te'n på trynet, det sa plinge-ling-ling
+
+Med dommer'n ut'a spillet gjorde vi to som vi ville
+Jeg sparka inn gebisset på'n, han bar seg riktig ille
+Nå skulle'n te' pers - jeg slo i revers
+Han åkte gjennom lufta, og det lukta bæsj
+
+I pausen la jeg inn en liten hestesko i hansken
+Da kampen b'ynte på igjen jeg slengte ut en fransk en
+Men åkke som var - han var litt av en kar
+Han reiste seg igjen og sloss med rompa bar
+
+Men så i runde tjuesju så ga'n seg denne slampen
+Jeg langa ut en høyre så han sovna midt i kampen
+Og publikum skreik - om de ikke kunne få'n
+Jeg slengt'n ner'i salen, og dem tråkka på'n
+
+
+Arnfinn Forness og Øyvind Granberg (cirka 1967)
+
+  `}
 ].map((text) => ({
   ...text,
   body: formatBody(text.body)
