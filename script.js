@@ -19,7 +19,7 @@ const texts = [
   {
     title: "Jag den gamle bort - Don't let the old man inn",
     type: "sangtekst",
-    label: "Toby Keith",
+    label: "Sangtekst",
     intro: "En intens sang om det å bli gammel.",
     meta: "Norsk tekst: Øyvind Granberg, april 2026",
     body: `
@@ -60,39 +60,120 @@ const texts = [
     `
   },
   {
-    title: "Når rommet synger",
-    type: "sangtekst",
+    title: "O' Heilage Natt",
+    type: "julesang",
     label: "Sangtekst",
-    intro: "En tekst bygget rundt refreng, pauser og den stille spenningen mellom to stemmer.",
-    meta: "Demo med akustisk arrangement",
+    intro: "En av Nordens mest elskede julesanger.",
+    meta: "En nynorsk vesjon av den svenske julesangen 'O Helga Natt', oversatt av Øyvind Granberg, desember 2023",
     body: `
-      Du sa rommet synger når vi tier stille nok, som om veggene bærer refrenger vi ikke våger å eie.
+     Heilage natt, der stjerner lyser klåre
+Ja, det er natta då Frelsaren vart født
+Verda var dømd til mørketid og tårer
+Heilt til Han kom og Han høyrde vår bøn
+Eit håp av fryd og verda song hans ære
+Og over stall ein heilag morgon rann
+Fall ned på kne, og høyr englesongen
+O’ Heilage natt, då Frelsaren vart født
+O’ Heilage natt, då Frelsaren vart født
 
-      Og jeg sto igjen i mellomtakten, med hendene fulle av ord som ville bli til lyd før de ble til mening.
+I tru og von vår klagen Han høyrde
+Vår hjartas glød leia fram til krubbas barn
+Stjerna ho lyste og klåre strålar førte
+Dei vise menn ifrå Østens fjerne land
+Og Kongen av kongar, sveipa i ei krubbe
+I freisting og skugge vart han vegens lys
+Han veit vår naud, og Han veit vår byrde
+Så ære din Herre, og bøy deg i Hans glans
+Så ære din Herre, og bøy deg i Hans glans
+
+Hans bodskap er å elske sin neste
+Kjærleiken er hans lov og testament
+Han bryter lenker, og slavane vert frelste
+Og i hans namn, all trældom er gløymt
+I gledas hymner og takkens kor vi synger
+Lat oss prise Hans heilage namn
+% Pris Jesus Kristus, og pris Ham i gagn
+Hans herlegdom og makt er her til evig tid
+Hans herlegdom og makt er her til evig tid %
+
     `
   },
   {
-    title: "Kart over fravær",
-    type: "annet",
-    label: "Essayistisk notat",
-    intro: "Et mer reflekterende format om minnets geografi og språkets forsøk på å holde fast.",
-    meta: "Arbeidsnotat",
+    title: "Du gjev meg tru",
+    type: "kjærlighetssang",
+    label: "Sangtekst",
+    intro: "En hylles til en kjær person som gir styrke og håp i vanskelige tider.",
+    meta: "Org. tittel: You raise me up Melodi/tekst: Rolf Løvland / Brendan Joseph Graham / Øyvind A. F. Granberg",
     body: `
-      Fravær er ikke tomrom. Det er et kart uten tegnforklaring. Vi leser det likevel, med fingrene først og forstanden etterpå.
+     Når eg er trist, og sjela mi er sliten
+Når gråten kjem og hjarta mitt slår ned 
+Då er eg taus, og ventar her i lengting
+Heilt til du kjem og sit eit bel hjå meg
 
-      Det som mangler, dytter oss ofte nærmere det som finnes. Derfor er også tap en måte å se på.
+Du gjev meg tru, so eg kan stå på fjelltopp
+Du gjev meg tru, so eg kan stå i storm
+Eg er sterk, eg stend på dine skuldrar
+Du gjev meg tru, på meir enn eg kan bli
+
+Det er eit liv, eit liv i kamp og liding
+Der varme hjarte missar nokre slag
+Men når du kjem og eg er fylt med lengting
+Då har eg sett eit glimt av evig dag
+
+Du gjev meg tru, so eg kan stå på fjelltopp
+Du gjev meg tru, so eg stend støtt i storm
+Eg er sterk, eg stend på dine skuldrar
+Du gjev meg tru, på meir enn eg kan bli
+
+Du gjev meg tru, på meir enn eg kan bli
+
     `
   },
   {
-    title: "Blå time over elva",
-    type: "prosa",
-    label: "Lyrisk prosa",
-    intro: "En tekst om overgang, kveld og hvordan landskapet kan låne bort språk når eget språk ikke strekker til.",
-    meta: "Publiseringsklar",
+    title: "Langfri og Dautid",
+    type: "Jaktvise",
+    label: "Sangtekst",
+    intro: "Når man skal på jakt er lokalbutikken viktig,
+    meta: "Det er en fordel å kjenne til litt historie fra Tresfjord. Fremført på Tresfjordrevyen",
     body: `
-      Elva bar kveldens siste farge som om den hadde fått ansvar for lyset alene. Alt annet trakk seg tilbake.
+      Her tili om da’n
+I va trøtt som ei kran
+I skulle ut på fisketur
+Det va då i fann ut, at
+Her trengs sterkare lut
+I må kjøpe både agn å øl
+Å ei pakke mæ skot, hvess æn hjort kjæm attåt
+No når sommar’n e på hæng
+Ne’me butikken på kaia, 
+hæng et skilt å svaia
+Me he alt du treeææng
 
-      Jeg tenkte at noen steder ikke ber om å bli forstått. De ber bare om at vi stanser lenge nok til å bli forandret.
+Vers:
+For på skiltet står det Lang..fri og Dau…tid
+Ja, me he alt du treng
+Me he alt det æn jeger, å æn svenger av beger, langt oppi dala treng
+Me he båndsagblad, 
+Å gamle griseblad
+Men det e ingen som væt kor hæn
+På skiltet står det Lang---fri og Dau..tid
+Spør du me so he dem alt
+
+Ååå, når du kjæm inn
+Gå i små korte trinn
+For her e det fullt å trongt
+Her e alle hylla sprengt
+Golvet er stengt
+Me alt fra syl te knipetong
+
+Mæ æt lite skrått blikk
+Å et intænst nikk
+Spør’n om du vell ha æn fres
+I sæ nei, nei, nei, takk du
+Bærre ei pakke mæ sluk
+For i e på fisketur
+
+Værs 3g med skifte til A-dur
+
     `
   },
   {
