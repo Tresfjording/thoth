@@ -73,8 +73,8 @@ Heilt til Han kom og Han høyrde vår bøn
 Eit håp av fryd og verda song hans ære
 Og over stall ein heilag morgon rann
 Fall ned på kne, og høyr englesongen
-O’ Heilage natt, då Frelsaren vart født
-O’ Heilage natt, då Frelsaren vart født
+O' Heilage natt, då Frelsaren vart født
+O' Heilage natt, då Frelsaren vart født
 
 I tru og von vår klagen Han høyrde
 Vår hjartas glød leia fram til krubbas barn
@@ -136,15 +136,15 @@ Du gjev meg tru, på meir enn eg kan bli
     intro: "Når man skal på jakt er lokalbutikken viktig",
     meta: "Det er en fordel å kjenne til litt historie fra Tresfjord. Fremført på Tresfjordrevyen",
     body: `
-      Her tili om da’n
+      Her tili om da'n
 I va trøtt som ei kran
 I skulle ut på fisketur
 Det va då i fann ut, at
 Her trengs sterkare lut
 I må kjøpe både agn å øl
 Å ei pakke mæ skot, hvess æn hjort kjæm attåt
-No når sommar’n e på hæng
-Ne’me butikken på kaia, 
+    No når sommar'n e på hæng
+    Ne'me butikken på kaia, 
 hæng et skilt å svaia
 Me he alt du treeææng
 
@@ -167,7 +167,7 @@ Me alt fra syl te knipetong
 
 Mæ æt lite skrått blikk
 Å et intænst nikk
-Spør’n om du vell ha æn fres
+Spør'n om du vell ha æn fres
 I sæ nei, nei, nei, takk du
 Bærre ei pakke mæ sluk
 For i e på fisketur
@@ -183,31 +183,31 @@ Værs 3g med skifte til A-dur
     intro: "En sang om en virkelig hendle i Tresfjord for mange mange år sia",
     meta: "Lagt til tone av Boby Bares Millers Cave",
     body: `
-      Lengst ner’i sør, innst inn i fjora
+      Lengst ner'i sør, innst inn i fjora
 Ova i huuuuus å heimegard
 Der kor Klæva vææææks, rakt opp i være
-Den dagjin dauin’ hadde fest på Fanthammar’n
+    Den dagjin dauin' hadde fest på Fanthammar'n
 
-Litt utpå daaaaa’n, der inn’i fjora
-Dokka faaaaaaant’n, plutsle fram
+    Litt utpå daaaaa'n, der inn'i fjora
+    Dokka faaaaaaant'n, plutsle fram
 Han sikta bæææænt, rett inn i aue
-Men løkka krute det va vått, på Fanthammar’n
+    Men løkka krute det va vått, på Fanthammar'n
 
-Så dasar’n heeeeeeeeeiv, opp si eia børse
-Og mæ et smeeeeeeeeell, datt fant’n om
+    Så dasar'n heeeeeeeeeiv, opp si eia børse
+    Og mæ et smeeeeeeeeell, datt fant'n om
 Mæ gull og pææææææng, i alle lomman
-Den dagjin dauin’ hadde fæst på Fanthammar’n
+    Den dagjin dauin' hadde fæst på Fanthammar'n
 
-Å lænsmann saaaaa om denna skatt’n
-At du kan gjæææær mæ’n ka du vell
-So’n ga’n te hooooo, Kari darsarn
-Den dagjin dauin’ hadde fest på Fanthammar’n
+    Å lænsmann saaaaa om denna skatt'n
+    At du kan gjæææær mæ'n ka du vell
+    So'n ga'n te hooooo, Kari darsarn
+    Den dagjin dauin' hadde fest på Fanthammar'n
 
 
-No velle’n gjeeeeeeefte se mæ damå
+    No velle'n gjeeeeeeefte se mæ damå
 Mæn ho Kari faaaaaannnnj se anna mannj
-Dæ tok mæ skaaaatt’n te søre møre
-Dær dæ levde lenge på æt skot frå Fanthammer’n
+    Dæ tok mæ skaaaatt'n te søre møre
+    Dær dæ levde lenge på æt skot frå Fanthammer'n
 
     `
   },
@@ -220,11 +220,11 @@ Dær dæ levde lenge på æt skot frå Fanthammer’n
     body: `
      Vell du vete koffor i allti gjæng i grønt
 Du synes væl  andre fargå e so skjønt
-Å koffer tur’du i gjeng i kjeldræss hæle dan
-Well, det e æn grunn ta at i gjeng i sa kle’an
+Å koffer tur'du i gjeng i kjeldræss hæle dan
+Well, det e æn grunn ta at i gjeng i sa kle'an
 
-I gjeng i grønt for frua ut på gar’n
-So må trakke rundt i silo’n hæle da’n
+I gjeng i grønt for frua ut på gar'n
+So må trakke rundt i silo'n hæle da'n
 I gjeng i grønt fer bondinj so he obetarte lån
 Mæn han e nøddj å ha dæm, det e et jævla hån
 
@@ -235,13 +235,13 @@ Og alle so gjeng svoltne uten mat
 
 Du trur væl årets oppgjær, det gjeng bra
 Men staten sæ no agrakadabra
-Og dermed set’n fattig at å lure på ka’n he
-Mens æ’n væt at det bankjin so he det
+Og dermed set'n fattig at å lure på ka'n he
+Mens æ'n væt at det bankjin so he det
 
 I gjeng i grønt for single farmera
-Som må på tv’n for å skaffe seg damer’a
+Som må på tv'n for å skaffe seg damer'a
 Når sjåvet so er over og kjærlighæta dør
-Set’n att like ænsom so før
+Set'n att like ænsom so før
 
 I gjeng i grønt for dæm so he knekt a
 Ryggen under slit på åkera
@@ -253,10 +253,10 @@ Te lags åt alle det he jo vore fætt
 Men innte det at det blir bellegare brø
 Vell du aldre se me i æn kjeldress so e rø
 
-I skulle gått i smoking hæle da’n
+I skulle gått i smoking hæle da'n
 gått rundt der å rett og slett gjett fan
-men inntil det blir bedre tider hær på jor’n
-går i i kjeldress,  innerst inni fjor’n
+men inntil det blir bedre tider hær på jor'n
+går i i kjeldress,  innerst inni fjor'n
 
     `
   }
