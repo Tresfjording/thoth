@@ -1,0 +1,246 @@
+:root {
+  --bg: #faf9f7;
+  --text: #1a1a1a;
+  --muted: #6b6b6b;
+  --accent: #2c4a3e;
+  --border: #e0ddd8;
+  --hover: #f0ede8;
+  --font-serif: 'Georgia', 'Times New Roman', serif;
+  --font-sans: 'Helvetica Neue', 'Arial', sans-serif;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 18px;
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-serif);
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ── Layout ─────────────────────────────── */
+.site-wrapper {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* ── Header ─────────────────────────────── */
+.site-header {
+  padding: 3.5rem 0 2rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 3rem;
+}
+
+.site-header h1 {
+  font-size: 2rem;
+  font-weight: normal;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+  margin-bottom: 0.25rem;
+}
+
+.site-header .tagline {
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ── Navigation ─────────────────────────── */
+.site-nav {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+}
+
+.site-nav a {
+  color: var(--muted);
+  transition: color 0.2s;
+}
+
+.site-nav a:hover,
+.site-nav a.active {
+  color: var(--accent);
+}
+
+/* ── Works list ─────────────────────────── */
+.works-section h2 {
+  font-size: 0.75rem;
+  font-family: var(--font-sans);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 1.5rem;
+}
+
+.works-list {
+  list-style: none;
+}
+
+.works-list li {
+  border-top: 1px solid var(--border);
+}
+
+.works-list li:last-child {
+  border-bottom: 1px solid var(--border);
+}
+
+.work-link {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 1rem 0.25rem;
+  transition: background 0.15s;
+  border-radius: 2px;
+  gap: 1rem;
+}
+
+.work-link:hover {
+  background: var(--hover);
+  padding-left: 0.5rem;
+}
+
+.work-link .work-title {
+  font-size: 1.05rem;
+  color: var(--text);
+}
+
+.work-link .work-meta {
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  color: var(--muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Work page ──────────────────────────── */
+.work-article {
+  margin-bottom: 4rem;
+}
+
+.work-article header {
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.work-article h1 {
+  font-size: 1.9rem;
+  font-weight: normal;
+  line-height: 1.3;
+  margin-bottom: 0.5rem;
+}
+
+.work-article .work-info {
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+}
+
+.work-article .work-info span + span::before {
+  content: ' · ';
+}
+
+.work-body {
+  font-size: 1.08rem;
+  line-height: 1.85;
+}
+
+.work-body p {
+  margin-bottom: 1.4em;
+}
+
+.work-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* Poetry: preserve line breaks */
+.work-body.poetry {
+  white-space: pre-wrap;
+  font-size: 1.05rem;
+}
+
+.work-body.poetry p {
+  margin-bottom: 2em;
+}
+
+/* ── Back link ──────────────────────────── */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-bottom: 2.5rem;
+  letter-spacing: 0.03em;
+  transition: color 0.2s;
+}
+
+.back-link:hover {
+  color: var(--accent);
+}
+
+/* ── About section ──────────────────────── */
+.about-section {
+  margin-bottom: 4rem;
+}
+
+.about-section h2 {
+  font-size: 0.75rem;
+  font-family: var(--font-sans);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 1.5rem;
+}
+
+.about-section p {
+  margin-bottom: 1.2em;
+  color: var(--text);
+}
+
+/* ── Footer ─────────────────────────────── */
+.site-footer {
+  border-top: 1px solid var(--border);
+  padding: 2rem 0;
+  margin-top: 4rem;
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* ── Responsive ─────────────────────────── */
+@media (max-width: 500px) {
+  html { font-size: 16px; }
+
+  .site-header {
+    padding-top: 2rem;
+  }
+
+  .work-link .work-meta {
+    display: none;
+  }
+}
