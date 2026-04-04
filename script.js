@@ -133,7 +133,7 @@ Du gjev meg tru, på meir enn eg kan bli
     title: "Langfri og Dautid",
     type: "Jaktvise",
     label: "Sangtekst",
-    intro: "Når man skal på jakt er lokalbutikken viktig,
+    intro: "Når man skal på jakt er lokalbutikken viktig",
     meta: "Det er en fordel å kjenne til litt historie fra Tresfjord. Fremført på Tresfjordrevyen",
     body: `
       Her tili om da’n
