@@ -1,33 +1,52 @@
 # thoth
 
-En enkel, statisk nettside for å presentere egne tekster som prosa, sangtekster og andre formater.
+Et enkelt, statisk bokverksted for å skrive og strukturere egne tekster.
 
 ## Filer
 
 - `index.html` inneholder strukturen på siden.
 - `styles.css` styrer utseendet.
-- `script.js` inneholder eksempeltekster og filtrering.
+- `script.js` inneholder redigering, import, forhåndsvisning og lokal lagring.
+- `publish.php` tar imot og lagrer bare arbeidskopien på serveren.
 
 ## Slik bruker du siden
 
-1. Åpne `index.html` direkte i nettleser for å se siden lokalt.
-2. Rediger tekstene i `script.js` for å bytte ut eksempelinnhold med ditt eget.
-3. Oppdater kontaktinformasjonen i `index.html`.
+1. Åpne `index.html` direkte i nettleseren.
+2. Skriv inn tittel, ingress, forfatter og kapittel.
+3. Lim inn manus i tekstfeltet. Det du skriver lagres automatisk lokalt i nettleseren.
 
-### Enklere redigering av tekster
+## Publisere arbeidskopien på One.com
 
-I `script.js` kan du nå skrive selve teksten i en blokk med backticks:
+Publiseringsknappen sender bare manusdataene til `publish.php`. Den sender ikke
+selve Thoth-siden eller innloggingsdataene dine.
 
-```js
-body: `
-	Første linje
-	Andre linje
+1. Åpne `publish.php` og bytt ut `CHANGE_THIS_TO_A_LONG_RANDOM_KEY` med en lang, hemmelig nøkkel.
+2. Last opp `index.html` og `arbeidskopi.html` til mappen `thoth` på One.com.
+3. Last opp editorfilene `index.html`, `styles.css`, `script.js` og `publish.php` til undermappen `thoth/rediger/`.
+4. Åpne redigeringssiden via `https://www.tresfjording.no/thoth/rediger/`.
+5. Trykk **Publiser arbeidskopi** og skriv inn den samme nøkkelen.
+6. Åpne lenken **Åpne publisert arbeidskopi** som vises etterpå. Publikum bruker `https://www.tresfjording.no/thoth/`.
 
-	Nytt vers eller nytt avsnitt
-`
-```
+Det er ikke nok å laste opp filene og oppdatere nettleseren. `arbeidskopi.html` må
+genereres på nytt ved å trykke publiseringsknappen.
 
-En tom linje lager et nytt avsnitt eller vers i visningen. Du trenger ikke lenger legge hvert avsnitt i egne anførselstegn.
+En lesbar sluttproduktside opprettes som `arbeidskopi.html` i `thoth`-mappen.
+Ingen JSON-kopi eller editorfiler lastes opp av publiseringsknappen. Mappen må ha skrivetilgang for PHP. Ikke del
+publiseringsnøkkelen offentlig. Publisering må gjøres fra redigeringssiden på One.com, ikke fra
+en lokal `file:///`-åpning.
+
+Mellomtitler formatert som `h2` i manus blir automatisk til kapitler i venstremenyen
+på sluttproduktsiden. Klikk på et kapittel for å hoppe til riktig sted i teksten.
+
+### Rask import
+
+Knappen **Importer fra tekst** tolker innlimt tekst slik:
+
+- første linje blir tittel
+- første avsnitt etter tittelen blir ingress
+- resten blir manus
+
+Tom linje mellom avsnitt blir bevart i bokvisningen.
 
 ## Skjult publisering på tresfjording.no
 
@@ -53,6 +72,6 @@ Så lenge du ikke lenker til mappen fra andre sider og URL-en ikke er kjent, vil
 
 ## Neste naturlige steg
 
-- Lage egne undersider for hver tekst.
-- Legge til flere kategorier eller et arkiv.
+- Legge til kapitler og navigering mellom manus.
+- Eksportere manus til ren tekst eller PDF.
 - Publisere siden med GitHub Pages eller Netlify.
