@@ -563,23 +563,12 @@ h2 {
 
 .editor-panel {
   display: grid;
-  gap: 10px;
+  grid-template-columns: minmax(260px, 280px) minmax(0, 1fr);
+  column-gap: 20px;
+  row-gap: 10px;
   padding: 28px;
   background: rgba(255, 251, 246, 0.82);
   backdrop-filter: blur(16px);
-}
-
-.editor-content {
-  display: grid;
-  grid-template-columns: minmax(260px, 300px) minmax(0, 1fr);
-  gap: 20px;
-  align-items: start;
-}
-
-.editor-fields {
-  display: grid;
-  gap: 10px;
-  min-width: 0;
 }
 
 .panel-heading {
@@ -588,6 +577,14 @@ h2 {
   align-items: end;
   gap: 16px;
   margin-bottom: 10px;
+  grid-column: 1 / -1;
+}
+
+.editor-fields {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  grid-column: 2;
 }
 
 .panel-heading h2 {
@@ -728,11 +725,14 @@ h2 {
   display: grid;
   gap: 12px;
   align-self: start;
+  width: 100%;
   padding: 16px 14px 14px;
   border: 1px solid rgba(31, 26, 23, 0.08);
   border-radius: var(--radius-medium);
   background: rgba(255, 255, 255, 0.38);
   min-width: 0;
+  grid-column: 1;
+  height: fit-content;
 }
 
 .chapter-jump-list {
@@ -759,7 +759,11 @@ h2 {
   transition: background 150ms ease, transform 150ms ease, border-color 150ms ease;
 }
 
-.chapter-jump-subitem {
+.chapter-jump-item--chapter {
+  background: rgba(166, 77, 45, 0.08);
+}
+
+.chapter-jump-item--section {
   margin-left: 12px;
   border-radius: 12px;
   background: rgba(166, 77, 45, 0.04);
@@ -921,12 +925,18 @@ body.reading-mode .page-shell {
     grid-template-columns: 1fr;
   }
 
-  .editor-content {
+  .editor-panel {
     grid-template-columns: 1fr;
+  }
+
+  .editor-fields,
+  .chapter-jumper {
+    grid-column: auto;
   }
 
   .chapter-jumper {
     position: static;
+    width: 100%;
   }
 
   .book-page {

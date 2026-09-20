@@ -109,32 +109,59 @@ function syncChapterJumpList() {
   const chapterJumpList = document.querySelector("#chapter-jump-list");
   if (!chapterJumpList) return;
 
+  const bookTitle = (fields.title.value || "Boktittel").trim() || "Boktittel";
+  const chapterTitle = (fields.chapter.value || "Kapittel").trim() || "Kapittel";
   const headings = [...bodyEditor.querySelectorAll("h2, h3")];
   chapterJumpList.replaceChildren();
+
+  const addNavigationItem = ({ label, level, onClick }) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "chapter-jump-item";
+    if (level === 2) button.classList.add("chapter-jump-item--chapter");
+    if (level === 3) button.classList.add("chapter-jump-item--section");
+    button.textContent = label;
+    button.title = label;
+    if (onClick) button.addEventListener("click", onClick);
+    chapterJumpList.append(button);
+  };
+
+  addNavigationItem({
+    label: bookTitle,
+    level: 1,
+    onClick: () => {
+      fields.title.focus();
+      fields.title.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  });
+
+  addNavigationItem({
+    label: chapterTitle,
+    level: 2,
+    onClick: () => {
+      fields.chapter.focus();
+      fields.chapter.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  });
 
   if (!headings.length) {
     const emptyState = document.createElement("span");
     emptyState.className = "chapter-jump-empty";
-    emptyState.textContent = "Ingen kapitler ennå";
+    emptyState.textContent = "Ingen underkapitler ennå";
     chapterJumpList.append(emptyState);
     return;
   }
 
   headings.forEach((heading) => {
-    const label = (heading.textContent || "Kapittel").trim() || "Kapittel";
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "chapter-jump-item";
-    if (heading.tagName === "H3") {
-      button.classList.add("chapter-jump-subitem");
-    }
-    button.textContent = label;
-    button.title = label;
-    button.addEventListener("click", () => {
-      heading.scrollIntoView({ behavior: "smooth", block: "start" });
-      bodyEditor.focus();
+    const label = (heading.textContent || "Avsnitt").trim() || "Avsnitt";
+    addNavigationItem({
+      label,
+      level: heading.tagName === "H3" ? 3 : 2,
+      onClick: () => {
+        heading.scrollIntoView({ behavior: "smooth", block: "start" });
+        bodyEditor.focus();
+      }
     });
-    chapterJumpList.append(button);
   });
 }
 

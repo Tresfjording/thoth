@@ -39,42 +39,41 @@
                 <span class="word-count" id="word-count">1110 ord</span>
               </div>
 
-              <div class="editor-content">
-                <aside class="chapter-jumper" aria-label="Kapitteloversikt">
-                  <div class="field-label-row">
-                    <label>Kapittel</label>
+              <aside class="chapter-jumper" aria-label="Kapitteloversikt">
+                <div class="field-label-row">
+                  <label>Kapittel</label>
+                </div>
+                <div id="chapter-jump-list" class="chapter-jump-list" aria-live="polite"></div>
+              </aside>
+
+              <div class="editor-fields">
+                <label for="title">Tittel</label>
+                <input id="title" name="title" type="text" placeholder="Skriv inn tittelen">
+
+                <label for="intro">Ingress</label>
+                <textarea id="intro" name="intro" rows="3" placeholder="En kort åpning som setter tonen for teksten."></textarea>
+
+                <div class="field-row">
+                  <div>
+                    <label for="author">Forfatter</label>
+                    <input id="author" name="author" type="text" placeholder="Navnet ditt">
                   </div>
-                  <div id="chapter-jump-list" class="chapter-jump-list" aria-live="polite"></div>
-                </aside>
-
-                <div class="editor-fields">
-                  <label for="title">Tittel</label>
-                  <input id="title" name="title" type="text" placeholder="Skriv inn tittelen">
-
-                  <label for="intro">Ingress</label>
-                  <textarea id="intro" name="intro" rows="3" placeholder="En kort åpning som setter tonen for teksten."></textarea>
-
-                  <div class="field-row">
-                    <div>
-                      <label for="author">Forfatter</label>
-                      <input id="author" name="author" type="text" placeholder="Navnet ditt">
-                    </div>
-                    <div>
-                      <label for="chapter">Kapittel</label>
-                      <input id="chapter" name="chapter" type="text" placeholder="Kapittel 1">
-                    </div>
+                  <div>
+                    <label for="chapter">Kapittel</label>
+                    <input id="chapter" name="chapter" type="text" placeholder="Kapittel 1">
                   </div>
+                </div>
 
-                  <div class="field-label-row">
-                    <label for="body">Tekst</label>
-                    <div class="text-field-actions">
-                      <label class="upload-button" for="upload-text">Last opp</label>
-                      <input id="upload-text" type="file" accept=".txt,.html,.htm,text/plain,text/html" hidden>
-                      <button class="text-clear-button" id="clear-body-button" type="button">Tøm tekst</button>
-                    </div>
+                <div class="field-label-row">
+                  <label for="body">Tekst</label>
+                  <div class="text-field-actions">
+                    <label class="upload-button" for="upload-text">Last opp</label>
+                    <input id="upload-text" type="file" accept=".txt,.html,.htm,text/plain,text/html" hidden>
+                    <button class="text-clear-button" id="clear-body-button" type="button">Tøm tekst</button>
                   </div>
-                  <textarea id="body" name="body" hidden=""></textarea>
-                  <div id="body-editor" class="body-input" contenteditable="true" role="textbox" aria-label="Manustekst" data-placeholder="Lim inn eller skriv teksten her ..."><p>Når vi snakker om kunstig intelligens, Mars-reiser og
+                </div>
+                <textarea id="body" name="body" hidden=""></textarea>
+                <div id="body-editor" class="body-input" contenteditable="true" role="textbox" aria-label="Manustekst" data-placeholder="Lim inn eller skriv teksten her ..."><p>Når vi snakker om kunstig intelligens, Mars-reiser og
 menneskets fremtid, snakker vi ofte som om mennesket selvsagt står i sentrum.
 At bevisstheten vår, kulturen vår og historien vår gjør oss til noe endelig og
 enestående. Men kanskje er det motsatt: Kanskje er mennesket ikke universets
@@ -230,18 +229,19 @@ vår egen biologiske form en dag ikke lenger strekker til.</p>
 
 <p>Øyvind A. F. Granberg</p></div>
 
-              <div class="publish-access">
-                <label for="publish-token">Publiseringsnøkkel</label>
-                <input id="publish-token" type="password" autocomplete="off" placeholder="Skriv inn nøkkelen">
-              </div>
+                <div class="publish-access">
+                  <label for="publish-token">Publiseringsnøkkel</label>
+                  <input id="publish-token" type="password" autocomplete="off" placeholder="Skriv inn nøkkelen">
+                </div>
 
-              <div class="editor-actions">
-                <button class="button button-primary" id="import-button" type="button">Importer fra tekst</button>
-                <button class="button button-secondary" id="clear-button" type="button">Tøm</button>
-                <button class="button button-secondary" id="read-mode-button" type="button">Lesemodus</button>
-                <button class="button button-secondary" id="publish-button" type="button">Publiser!</button>
+                <div class="editor-actions">
+                  <button class="button button-primary" id="import-button" type="button">Importer fra tekst</button>
+                  <button class="button button-secondary" id="clear-button" type="button">Tøm</button>
+                  <button class="button button-secondary" id="read-mode-button" type="button">Lesemodus</button>
+                  <button class="button button-secondary" id="publish-button" type="button">Publiser!</button>
+                </div>
+                <p class="helper-text">Importer bruker første linje som tittel, første avsnitt som ingress og resten som manus.</p>
               </div>
-              <p class="helper-text">Importer bruker første linje som tittel, første avsnitt som ingress og resten som manus.</p>
             </form>
 
             <article class="book-preview" aria-label="Forhåndsvisning av manus">
