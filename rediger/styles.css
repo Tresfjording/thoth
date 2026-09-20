@@ -571,7 +571,7 @@ h2 {
 
 .editor-content {
   display: grid;
-  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+  grid-template-columns: minmax(260px, 300px) minmax(0, 1fr);
   gap: 20px;
   align-items: start;
 }
@@ -732,11 +732,13 @@ h2 {
   border: 1px solid rgba(31, 26, 23, 0.08);
   border-radius: var(--radius-medium);
   background: rgba(255, 255, 255, 0.38);
+  min-width: 0;
 }
 
 .chapter-jump-list {
   display: grid;
   gap: 9px;
+  min-width: 0;
 }
 
 .chapter-jump-item {
@@ -750,8 +752,18 @@ h2 {
   font-size: 0.8rem;
   font-weight: 700;
   text-align: left;
+  line-height: 1.35;
+  white-space: normal;
+  word-break: break-word;
   cursor: pointer;
   transition: background 150ms ease, transform 150ms ease, border-color 150ms ease;
+}
+
+.chapter-jump-subitem {
+  margin-left: 12px;
+  border-radius: 12px;
+  background: rgba(166, 77, 45, 0.04);
+  font-weight: 600;
 }
 
 .chapter-jump-item:hover,

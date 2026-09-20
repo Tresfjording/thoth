@@ -109,7 +109,7 @@ function syncChapterJumpList() {
   const chapterJumpList = document.querySelector("#chapter-jump-list");
   if (!chapterJumpList) return;
 
-  const headings = [...bodyEditor.querySelectorAll("h2")];
+  const headings = [...bodyEditor.querySelectorAll("h2, h3")];
   chapterJumpList.replaceChildren();
 
   if (!headings.length) {
@@ -125,7 +125,11 @@ function syncChapterJumpList() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "chapter-jump-item";
+    if (heading.tagName === "H3") {
+      button.classList.add("chapter-jump-subitem");
+    }
     button.textContent = label;
+    button.title = label;
     button.addEventListener("click", () => {
       heading.scrollIntoView({ behavior: "smooth", block: "start" });
       bodyEditor.focus();
