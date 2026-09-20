@@ -20,10 +20,18 @@ const starterText = {
   body: "<p>Lim inn teksten din her.</p><p>Hvert tomrom mellom avsnitt blir bevart i bokvisningen.</p>"
 };
 
-const allowedTags = new Set(["P", "BR", "STRONG", "B", "EM", "I", "U", "H2", "H3", "BLOCKQUOTE", "UL", "OL", "LI"]);
+const allowedTags = new Set(["P", "BR", "STRONG", "B", "EM", "I", "U", "H3", "BLOCKQUOTE", "UL", "OL", "LI"]);
+
+function normalizeSectionHeadings(html) {
+  return html
+    .replace(/<\s*h2\b/gi, "<h3")
+    .replace(/<\s*\/\s*h2\s*>/gi, "</h3>")
+    .replace(/<\s*h2\s*\>/gi, "<h3>");
+}
 
 function sanitizeHtml(html) {
-  const documentFragment = new DOMParser().parseFromString(html, "text/html");
+  const normalizedHtml = normalizeSectionHeadings(html);
+  const documentFragment = new DOMParser().parseFromString(normalizedHtml, "text/html");
   documentFragment.body.querySelectorAll("*").forEach((element) => {
     if (!allowedTags.has(element.tagName)) {
       element.replaceWith(...element.childNodes);
@@ -45,7 +53,7 @@ function slugify(text) {
 
 function buildTableOfContents(bodyHtml) {
   const documentFragment = new DOMParser().parseFromString(bodyHtml, "text/html");
-  const headings = [...documentFragment.body.querySelectorAll("h2")];
+  const headings = [...documentFragment.body.querySelectorAll("h3")];
 
   if (!headings.length) {
     return { toc: null, bodyHtml: documentFragment.body.innerHTML };
@@ -111,7 +119,7 @@ function syncChapterJumpList() {
 
   const bookTitle = (fields.title.value || "Boktittel").trim() || "Boktittel";
   const chapterTitle = (fields.chapter.value || "Underkapittel").trim() || "Underkapittel";
-  const headings = [...bodyEditor.querySelectorAll("h2, h3")];
+  const headings = [...bodyEditor.querySelectorAll("h3")];
   chapterJumpList.replaceChildren();
 
   const addNavigationItem = ({ label, level, onClick }) => {
