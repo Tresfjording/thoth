@@ -14,7 +14,7 @@
   <body>
     <div class="page-shell">
       <header class="site-header">
-        <a class="brand" href="file:///C:/Users/%C3%98yvindGranberg/Projects/thoth/index.html#top" aria-label="Gå til toppen">
+        <a class="brand" href="../index.html#top" aria-label="Gå til toppen">
           <span class="brand-mark">Thoth</span>
           <span class="brand-subtitle">Bokverksted</span>
         </a>
@@ -39,33 +39,42 @@
                 <span class="word-count" id="word-count">1110 ord</span>
               </div>
 
-              <label for="title">Tittel</label>
-              <input id="title" name="title" type="text" placeholder="Skriv inn tittelen">
+              <div class="editor-content">
+                <aside class="chapter-jumper" aria-label="Kapitteloversikt">
+                  <div class="field-label-row">
+                    <label>Kapittel</label>
+                  </div>
+                  <div id="chapter-jump-list" class="chapter-jump-list" aria-live="polite"></div>
+                </aside>
 
-              <label for="intro">Ingress</label>
-              <textarea id="intro" name="intro" rows="3" placeholder="En kort åpning som setter tonen for teksten."></textarea>
+                <div class="editor-fields">
+                  <label for="title">Tittel</label>
+                  <input id="title" name="title" type="text" placeholder="Skriv inn tittelen">
 
-              <div class="field-row">
-                <div>
-                  <label for="author">Forfatter</label>
-                  <input id="author" name="author" type="text" placeholder="Navnet ditt">
-                </div>
-                <div>
-                  <label for="chapter">Kapittel</label>
-                  <input id="chapter" name="chapter" type="text" placeholder="Kapittel 1">
-                </div>
-              </div>
+                  <label for="intro">Ingress</label>
+                  <textarea id="intro" name="intro" rows="3" placeholder="En kort åpning som setter tonen for teksten."></textarea>
 
-              <div class="field-label-row">
-                <label for="body">Tekst</label>
-                <div class="text-field-actions">
-                  <label class="upload-button" for="upload-text">Last opp</label>
-                  <input id="upload-text" type="file" accept=".txt,.html,.htm,text/plain,text/html" hidden>
-                  <button class="text-clear-button" id="clear-body-button" type="button">Tøm tekst</button>
-                </div>
-              </div>
-              <textarea id="body" name="body" hidden=""></textarea>
-              <div id="body-editor" class="body-input" contenteditable="true" role="textbox" aria-label="Manustekst" data-placeholder="Lim inn eller skriv teksten her ..."><p>Når vi snakker om kunstig intelligens, Mars-reiser og
+                  <div class="field-row">
+                    <div>
+                      <label for="author">Forfatter</label>
+                      <input id="author" name="author" type="text" placeholder="Navnet ditt">
+                    </div>
+                    <div>
+                      <label for="chapter">Kapittel</label>
+                      <input id="chapter" name="chapter" type="text" placeholder="Kapittel 1">
+                    </div>
+                  </div>
+
+                  <div class="field-label-row">
+                    <label for="body">Tekst</label>
+                    <div class="text-field-actions">
+                      <label class="upload-button" for="upload-text">Last opp</label>
+                      <input id="upload-text" type="file" accept=".txt,.html,.htm,text/plain,text/html" hidden>
+                      <button class="text-clear-button" id="clear-body-button" type="button">Tøm tekst</button>
+                    </div>
+                  </div>
+                  <textarea id="body" name="body" hidden=""></textarea>
+                  <div id="body-editor" class="body-input" contenteditable="true" role="textbox" aria-label="Manustekst" data-placeholder="Lim inn eller skriv teksten her ..."><p>Når vi snakker om kunstig intelligens, Mars-reiser og
 menneskets fremtid, snakker vi ofte som om mennesket selvsagt står i sentrum.
 At bevisstheten vår, kulturen vår og historien vår gjør oss til noe endelig og
 enestående. Men kanskje er det motsatt: Kanskje er mennesket ikke universets
@@ -225,6 +234,7 @@ vår egen biologiske form en dag ikke lenger strekker til.</p>
                 <label for="publish-token">Publiseringsnøkkel</label>
                 <input id="publish-token" type="password" autocomplete="off" placeholder="Skriv inn nøkkelen">
               </div>
+
               <div class="editor-actions">
                 <button class="button button-primary" id="import-button" type="button">Importer fra tekst</button>
                 <button class="button button-secondary" id="clear-button" type="button">Tøm</button>

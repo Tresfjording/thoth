@@ -9,6 +9,7 @@ const bookPage = document.querySelector("#book-page");
 const wordCount = document.querySelector("#word-count");
 const saveStatus = document.querySelector("#save-status");
 const readModeButton = document.querySelector("#read-mode-button");
+const requestedChapter = new URLSearchParams(window.location.search).get("chapter") || window.location.hash.replace(/^#/, "");
 const storageKey = "thoth-manuscript";
 
 const starterText = {
@@ -104,6 +105,35 @@ function setManuscript(manuscript) {
   renderPreview();
 }
 
+function syncChapterJumpList() {
+  const chapterJumpList = document.querySelector("#chapter-jump-list");
+  if (!chapterJumpList) return;
+
+  const headings = [...bodyEditor.querySelectorAll("h2")];
+  chapterJumpList.replaceChildren();
+
+  if (!headings.length) {
+    const emptyState = document.createElement("span");
+    emptyState.className = "chapter-jump-empty";
+    emptyState.textContent = "Ingen kapitler ennå";
+    chapterJumpList.append(emptyState);
+    return;
+  }
+
+  headings.forEach((heading) => {
+    const label = (heading.textContent || "Kapittel").trim() || "Kapittel";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "chapter-jump-item";
+    button.textContent = label;
+    button.addEventListener("click", () => {
+      heading.scrollIntoView({ behavior: "smooth", block: "start" });
+      bodyEditor.focus();
+    });
+    chapterJumpList.append(button);
+  });
+}
+
 function renderPreview() {
   const manuscript = getManuscript();
   const cleanBody = sanitizeHtml(manuscript.body);
@@ -140,6 +170,17 @@ function renderPreview() {
     author.className = "preview-author";
     author.textContent = manuscript.author;
     bookPage.append(author);
+  }
+
+  syncChapterJumpList();
+
+  if (requestedChapter) {
+    const chapterTarget = bookPage.querySelector('[id="' + requestedChapter + '"]');
+    if (chapterTarget) {
+      requestAnimationFrame(() => {
+        chapterTarget.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
   }
 
   const words = body.textContent.trim() ? body.textContent.trim().split(/\s+/).length : 0;

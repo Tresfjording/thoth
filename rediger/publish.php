@@ -53,18 +53,24 @@ $body = preg_replace(
 );
 $chapterLinks = [];
 $chapterNumber = 0;
+$chapterCount = preg_match_all('/<h2\b/i', $body);
+if ($chapterCount < 1) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Boka trenger minst ett kapittel med kapitteloverskrift før publisering.']);
+    exit;
+}
 $body = preg_replace_callback('/<h2>(.*?)<\/h2>/is', static function (array $match) use (&$chapterLinks, &$chapterNumber, $escape): string {
     $chapterNumber++;
     $chapterTitle = trim(strip_tags($match[1]));
     $slug = preg_replace('/[^a-z0-9]+/i', '-', strtolower($chapterTitle));
     $slug = trim($slug, '-') ?: 'kapittel';
     $id = $slug . '-' . $chapterNumber;
-    $chapterLinks[] = '<a href="#' . $id . '">' . $escape($chapterTitle) . '</a>';
+    $chapterLinks[] = '<div class="chapter-item"><a href="#' . $id . '">' . $escape($chapterTitle) . '</a><a class="chapter-edit" href="./rediger/index.html?chapter=' . rawurlencode($id) . '">rediger</a></div>';
     return '<h2 id="' . $id . '">' . $match[1] . '</h2>';
 }, $body);
 $chapterNavigation = $chapterLinks
     ? '<nav aria-label="Kapitler"><p class="nav-label">Kapitler</p>' . implode('', $chapterLinks) . '</nav>'
-    : '<nav aria-label="Kapitler"><p class="nav-label">Kapitler</p><span class="nav-empty">Ingen kapitler ennå</span></nav>';
+    : '<nav aria-label="Kapitler"><p class="nav-label">Kapitler</p><span class="nav-empty">Minst 1 kapittel kreves</span></nav>';
 $html = '<!doctype html><html lang="no"><head><meta charset="utf-8">'
     . '<meta name="viewport" content="width=device-width, initial-scale=1">'
     . '<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">'
@@ -76,7 +82,7 @@ $html = '<!doctype html><html lang="no"><head><meta charset="utf-8">'
     . '*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--wash);color:var(--ink);font:18px/1.7 Georgia,serif;user-select:none;-webkit-user-select:none;-ms-user-select:none;-webkit-touch-callout:none}'
     . '.layout{display:grid;grid-template-columns:220px minmax(0,760px);gap:56px;max-width:1100px;margin:0 auto;padding:64px 28px}'
     . 'nav{position:sticky;top:40px;align-self:start;padding:18px 0}.nav-label{margin:0 0 18px;color:var(--muted);font:700 11px/1.2 Arial,sans-serif;letter-spacing:.16em;text-transform:uppercase}'
-    . 'nav a{display:block;padding:8px 0;color:var(--muted);font:15px/1.35 Arial,sans-serif;text-decoration:none;border-left:2px solid transparent;padding-left:14px}nav a:hover{color:var(--accent);border-color:var(--accent)}.nav-empty{color:var(--muted);font:14px Arial,sans-serif}'
+    . '.chapter-item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0}.chapter-item a{display:block;color:var(--muted);font:15px/1.35 Arial,sans-serif;text-decoration:none;border-left:2px solid transparent;padding-left:14px}.chapter-item a:hover{color:var(--accent);border-color:var(--accent)}.chapter-edit{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)!important;border-left:none!important;padding-left:0!important}.nav-empty{color:var(--muted);font:14px Arial,sans-serif}'
     . '.book{padding:72px clamp(32px,8vw,88px);background:var(--paper);box-shadow:0 18px 45px rgba(68,43,21,.12)}'
     . 'h1{margin:18px 0 24px;font-size:clamp(2.6rem,6vw,4.5rem);line-height:.98}h2{scroll-margin-top:32px;margin:56px 0 18px;font-size:2rem;line-height:1.1}em{color:var(--muted)}article{margin-top:34px}small{color:var(--muted)}'
     . '.locked{padding:80px 24px;text-align:center;color:var(--muted);font:600 18px/1.6 Arial,sans-serif}.locked strong{display:block;color:var(--ink);font-size:2rem;margin-bottom:12px}'
