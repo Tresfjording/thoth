@@ -21,8 +21,8 @@ Publiseringsknappen sender bare manusdataene til `publish.php`. Den sender ikke
 selve Thoth-siden eller innloggingsdataene dine.
 
 1. Åpne `publish.php` og bytt ut `CHANGE_THIS_TO_A_LONG_RANDOM_KEY` med en lang, hemmelig nøkkel.
-2. Last opp `index.html` og `arbeidskopi.html` til mappen `thoth` på One.com.
-3. Last opp editorfilene `index.html`, `styles.css`, `script.js` og `publish.php` til undermappen `thoth/rediger/`.
+2. Last opp prosjektets hoved-`index.html` til mappen `thoth` på One.com. Den viser status dersom ingen bok er publisert ennå.
+3. Last opp `rediger/index.html`, `rediger/styles.css`, `rediger/script.js` og `rediger/publish.php` til undermappen `thoth/rediger/`.
 4. Åpne redigeringssiden via `https://www.tresfjording.no/thoth/rediger/`.
 5. Trykk **Publiser arbeidskopi** og skriv inn den samme nøkkelen.
 6. Åpne lenken **Åpne publisert arbeidskopi** som vises etterpå. Publikum bruker `https://www.tresfjording.no/thoth/`.

@@ -8,6 +8,7 @@ const bodyEditor = document.querySelector("#body-editor");
 const bookPage = document.querySelector("#book-page");
 const wordCount = document.querySelector("#word-count");
 const saveStatus = document.querySelector("#save-status");
+const readModeButton = document.querySelector("#read-mode-button");
 const storageKey = "thoth-manuscript";
 
 const starterText = {
@@ -30,6 +31,49 @@ function sanitizeHtml(html) {
     [...element.attributes].forEach((attribute) => element.removeAttribute(attribute.name));
   });
   return documentFragment.body.innerHTML;
+}
+
+function slugify(text) {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "") || "kapittel";
+}
+
+function buildTableOfContents(bodyHtml) {
+  const documentFragment = new DOMParser().parseFromString(bodyHtml, "text/html");
+  const headings = [...documentFragment.body.querySelectorAll("h2")];
+
+  if (!headings.length) {
+    return { toc: null, bodyHtml: documentFragment.body.innerHTML };
+  }
+
+  const seenIds = new Map();
+  headings.forEach((heading, index) => {
+    const rawTitle = heading.textContent.trim() || `Kapittel ${index + 1}`;
+    let slug = slugify(rawTitle);
+    const count = seenIds.get(slug) || 0;
+    seenIds.set(slug, count + 1);
+    heading.id = count === 0 ? slug : `${slug}-${count + 1}`;
+  });
+
+  const nav = document.createElement("nav");
+  nav.className = "preview-toc";
+  const list = document.createElement("ul");
+
+  headings.forEach((heading) => {
+    const item = document.createElement("li");
+    const link = document.createElement("a");
+    link.href = `#${heading.id}`;
+    link.textContent = heading.textContent.trim();
+    item.append(link);
+    list.append(item);
+  });
+
+  nav.append(list);
+  return { toc: nav, bodyHtml: documentFragment.body.innerHTML };
 }
 
 function setBodyHtml(html) {
@@ -63,6 +107,7 @@ function setManuscript(manuscript) {
 function renderPreview() {
   const manuscript = getManuscript();
   const cleanBody = sanitizeHtml(manuscript.body);
+  const { toc, bodyHtml } = buildTableOfContents(cleanBody);
   bookPage.replaceChildren();
 
   const chapter = document.createElement("p");
@@ -81,9 +126,13 @@ function renderPreview() {
     bookPage.append(intro);
   }
 
+  if (toc) {
+    bookPage.append(toc);
+  }
+
   const body = document.createElement("div");
   body.className = "preview-body";
-  body.innerHTML = cleanBody;
+  body.innerHTML = bodyHtml;
   bookPage.append(body);
 
   if (manuscript.author.trim()) {
@@ -123,6 +172,15 @@ document.querySelector("#clear-button").addEventListener("click", () => {
   saveStatus.textContent = "Tomt manus";
 });
 
+readModeButton.addEventListener("click", () => {
+  document.body.classList.toggle("reading-mode");
+  const isReadingMode = document.body.classList.contains("reading-mode");
+  readModeButton.textContent = isReadingMode ? "Tilbake til redigering" : "Lesemodus";
+  readModeButton.classList.toggle("button-primary", isReadingMode);
+  readModeButton.classList.toggle("button-secondary", !isReadingMode);
+  saveStatus.textContent = isReadingMode ? "Lesemodus aktiv" : "Lagret lokalt";
+});
+
 document.querySelector("#clear-body-button").addEventListener("click", () => {
   setBodyHtml("");
   renderPreview();
@@ -150,7 +208,7 @@ document.querySelector("#publish-button").addEventListener("click", async () => 
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || "Publisering mislyktes.");
-    const publicUrl = new URL("../arbeidskopi.html?v=" + Date.now(), window.location.href).href;
+    const publicUrl = "https://www.tresfjording.no/thoth/arbeidskopi.html?v=" + Date.now();
     saveStatus.innerHTML = `<a href="${publicUrl}" target="_blank" rel="noopener">Åpne publisert arbeidskopi</a>`;
   } catch (error) {
     const message = error instanceof TypeError

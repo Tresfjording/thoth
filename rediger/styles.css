@@ -720,6 +720,27 @@ h2 {
   min-width: 0;
   padding: 12px;
   background: rgba(225, 214, 198, 0.52);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+body.reading-mode .workspace-intro,
+body.reading-mode .editor-panel {
+  display: none;
+}
+
+body.reading-mode .editor-layout {
+  grid-template-columns: 1fr;
+}
+
+body.reading-mode .book-preview {
+  max-width: 980px;
+  margin: 0 auto;
+  transform: scale(1.01);
+  box-shadow: 0 30px 60px rgba(68, 43, 21, 0.18);
+}
+
+body.reading-mode .page-shell {
+  width: min(1100px, calc(100% - 26px));
 }
 
 .preview-toolbar {
@@ -769,11 +790,49 @@ h2 {
   line-height: 1.25;
 }
 
+.preview-toc {
+  margin: 0 0 28px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(166, 77, 45, 0.04);
+}
+
+.preview-toc ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.preview-toc li {
+  margin: 0;
+}
+
+.preview-toc a {
+  color: var(--accent-deep);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.preview-toc a:hover,
+.preview-toc a:focus-visible {
+  text-decoration: underline;
+}
+
 .preview-body {
   max-width: 38rem;
   font-family: "Cormorant Garamond", serif;
   font-size: 1.35rem;
   line-height: 1.45;
+}
+
+.preview-body h2 {
+  margin: 2.2em 0 0.8em;
+  font-size: clamp(2rem, 2.6vw, 2.5rem);
+  line-height: 1;
+  scroll-margin-top: 110px;
 }
 
 .preview-body p {

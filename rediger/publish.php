@@ -1,7 +1,7 @@
 <?php
 const PUBLISH_TOKEN = '18105433324';
-const OUTPUT_HTML_FILE = dirname(__DIR__) . '/arbeidskopi.html';
-const LEGACY_JSON_FILE = dirname(__DIR__) . '/arbeidskopi.json';
+define('OUTPUT_HTML_FILE', dirname(__DIR__) . '/arbeidskopi.html');
+define('LEGACY_JSON_FILE', dirname(__DIR__) . '/arbeidskopi.json');
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -67,21 +67,34 @@ $chapterNavigation = $chapterLinks
     : '<nav aria-label="Kapitler"><p class="nav-label">Kapitler</p><span class="nav-empty">Ingen kapitler ennå</span></nav>';
 $html = '<!doctype html><html lang="no"><head><meta charset="utf-8">'
     . '<meta name="viewport" content="width=device-width, initial-scale=1">'
+    . '<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">'
     . '<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">'
     . '<meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">'
     . '<title>' . $escape($publishedCopy['title']) . '</title>'
     . '<style>'
     . ':root{--ink:#1f1a17;--muted:#6b5e53;--paper:#fffaf2;--wash:#eee2d6;--accent:#8d3f25}'
-    . '*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--wash);color:var(--ink);font:18px/1.7 Georgia,serif}'
+    . '*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--wash);color:var(--ink);font:18px/1.7 Georgia,serif;user-select:none;-webkit-user-select:none;-ms-user-select:none;-webkit-touch-callout:none}'
     . '.layout{display:grid;grid-template-columns:220px minmax(0,760px);gap:56px;max-width:1100px;margin:0 auto;padding:64px 28px}'
     . 'nav{position:sticky;top:40px;align-self:start;padding:18px 0}.nav-label{margin:0 0 18px;color:var(--muted);font:700 11px/1.2 Arial,sans-serif;letter-spacing:.16em;text-transform:uppercase}'
-    . 'nav a{display:block;padding:8px 0;color:var(--muted);font:15px/1.35 Arial,sans-serif;text-decoration:none;border-left:2px solid transparent;padding-left:14px}'
-    . 'nav a:hover{color:var(--accent);border-color:var(--accent)}.nav-empty{color:var(--muted);font:14px Arial,sans-serif}'
+    . 'nav a{display:block;padding:8px 0;color:var(--muted);font:15px/1.35 Arial,sans-serif;text-decoration:none;border-left:2px solid transparent;padding-left:14px}nav a:hover{color:var(--accent);border-color:var(--accent)}.nav-empty{color:var(--muted);font:14px Arial,sans-serif}'
     . '.book{padding:72px clamp(32px,8vw,88px);background:var(--paper);box-shadow:0 18px 45px rgba(68,43,21,.12)}'
     . 'h1{margin:18px 0 24px;font-size:clamp(2.6rem,6vw,4.5rem);line-height:.98}h2{scroll-margin-top:32px;margin:56px 0 18px;font-size:2rem;line-height:1.1}em{color:var(--muted)}article{margin-top:34px}small{color:var(--muted)}'
+    . '.locked{padding:80px 24px;text-align:center;color:var(--muted);font:600 18px/1.6 Arial,sans-serif}.locked strong{display:block;color:var(--ink);font-size:2rem;margin-bottom:12px}'
     . '@media(max-width:800px){.layout{display:block;padding:24px 14px}.layout nav{position:static;padding:0 10px 24px}.layout nav a{display:inline-block;margin-right:14px}.book{padding:42px 28px}}'
     . '</style>'
-    . '</head><body><div class="layout">' . $chapterNavigation
+    . '</head><body><script>'
+    . '(function(){const allowedHosts=new Set(["www.tresfjording.no","tresfjording.no","localhost"]);'
+    . 'if(!allowedHosts.has(window.location.hostname)){'
+    . 'document.body.innerHTML="<main class=\"locked\"><strong>Kun på eget domene</strong>Denne boken er kun tilgjengelig på tresfjording.no.</main>";'
+    . 'return;}'
+    . 'const block = function(event){if((event.ctrlKey||event.metaKey)&&["c","C","s","S","p","P","u","U","a","A"].includes(event.key)){event.preventDefault();}if(event.key==="PrintScreen"){event.preventDefault();}};'
+    . 'document.addEventListener("contextmenu", function(event){event.preventDefault();}, {passive:false});'
+    . 'document.addEventListener("copy", function(event){event.preventDefault();}, {passive:false});'
+    . 'document.addEventListener("cut", function(event){event.preventDefault();}, {passive:false});'
+    . 'document.addEventListener("dragstart", function(event){event.preventDefault();}, {passive:false});'
+    . 'document.addEventListener("selectstart", function(event){event.preventDefault();}, {passive:false});'
+    . 'document.addEventListener("keydown", block, {passive:false});'
+    . '})();</script><div class="layout">' . $chapterNavigation
     . '<main class="book"><small>' . $escape($publishedCopy['chapter']) . '</small>'
     . '<h1>' . $escape($publishedCopy['title']) . '</h1>'
     . '<p><em>' . $escape($publishedCopy['intro']) . '</em></p>'
@@ -99,5 +112,5 @@ if (is_file(LEGACY_JSON_FILE)) {
     unlink(LEGACY_JSON_FILE);
 }
 
-$path = rtrim(dirname(dirname($_SERVER['SCRIPT_NAME'])), '/') . '/arbeidskopi.html?v=' . time();
+$path = 'https://www.tresfjording.no/thoth/arbeidskopi.html?v=' . time();
 echo json_encode(['ok' => true, 'message' => 'Arbeidskopien er publisert.', 'url' => $path]);
