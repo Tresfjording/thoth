@@ -548,8 +548,8 @@ h2 {
 
 .editor-layout {
   display: grid;
-  grid-template-columns: minmax(300px, 0.75fr) minmax(0, 1.25fr);
-  gap: 24px;
+  grid-template-columns: 1fr;
+  gap: 18px;
   align-items: start;
 }
 
@@ -562,10 +562,7 @@ h2 {
 }
 
 .editor-panel {
-  display: grid;
-  grid-template-columns: minmax(260px, 280px) minmax(0, 1fr);
-  column-gap: 20px;
-  row-gap: 10px;
+  display: block;
   padding: 28px;
   background: rgba(255, 251, 246, 0.82);
   backdrop-filter: blur(16px);
@@ -577,14 +574,19 @@ h2 {
   align-items: end;
   gap: 16px;
   margin-bottom: 10px;
-  grid-column: 1 / -1;
+}
+
+.editor-grid {
+  display: grid;
+  grid-template-columns: minmax(190px, 220px) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
 }
 
 .editor-fields {
   display: grid;
   gap: 10px;
   min-width: 0;
-  grid-column: 2;
 }
 
 .panel-heading h2 {
@@ -723,15 +725,14 @@ h2 {
   position: sticky;
   top: 96px;
   display: grid;
-  gap: 12px;
+  gap: 10px;
   align-self: start;
   width: 100%;
-  padding: 16px 14px 14px;
+  padding: 14px 12px 12px;
   border: 1px solid rgba(31, 26, 23, 0.08);
   border-radius: var(--radius-medium);
   background: rgba(255, 255, 255, 0.38);
   min-width: 0;
-  grid-column: 1;
   height: fit-content;
 }
 
@@ -741,7 +742,14 @@ h2 {
   min-width: 0;
 }
 
+.chapter-jump-item-wrap {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
 .chapter-jump-item {
+  flex: 1 1 auto;
   width: 100%;
   border: 1px solid rgba(31, 26, 23, 0.12);
   border-radius: 999px;
@@ -759,6 +767,19 @@ h2 {
   transition: background 150ms ease, transform 150ms ease, border-color 150ms ease;
 }
 
+.chapter-jump-delete {
+  width: 32px;
+  min-width: 32px;
+  border: 1px solid rgba(31, 26, 23, 0.12);
+  border-radius: 999px;
+  background: rgba(166, 77, 45, 0.08);
+  color: var(--accent-deep);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 150ms ease, transform 150ms ease;
+}
+
 .chapter-jump-item--chapter {
   background: rgba(166, 77, 45, 0.08);
 }
@@ -771,7 +792,9 @@ h2 {
 }
 
 .chapter-jump-item:hover,
-.chapter-jump-item:focus-visible {
+.chapter-jump-item:focus-visible,
+.chapter-jump-delete:hover,
+.chapter-jump-delete:focus-visible {
   background: rgba(166, 77, 45, 0.08);
   border-color: rgba(166, 77, 45, 0.26);
   transform: translateY(-1px);
@@ -790,6 +813,7 @@ h2 {
 }
 
 .book-preview {
+  display: none;
   min-width: 0;
   padding: 12px;
   background: rgba(225, 214, 198, 0.52);
@@ -806,6 +830,7 @@ body.reading-mode .editor-layout {
 }
 
 body.reading-mode .book-preview {
+  display: block;
   max-width: 980px;
   margin: 0 auto;
   transform: scale(1.01);
@@ -925,13 +950,8 @@ body.reading-mode .page-shell {
     grid-template-columns: 1fr;
   }
 
-  .editor-panel {
+  .editor-grid {
     grid-template-columns: 1fr;
-  }
-
-  .editor-fields,
-  .chapter-jumper {
-    grid-column: auto;
   }
 
   .chapter-jumper {

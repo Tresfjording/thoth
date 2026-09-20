@@ -110,7 +110,7 @@ function syncChapterJumpList() {
   if (!chapterJumpList) return;
 
   const bookTitle = (fields.title.value || "Boktittel").trim() || "Boktittel";
-  const chapterTitle = (fields.chapter.value || "Kapittel").trim() || "Kapittel";
+  const chapterTitle = (fields.chapter.value || "Underkapittel").trim() || "Underkapittel";
   const headings = [...bodyEditor.querySelectorAll("h2, h3")];
   chapterJumpList.replaceChildren();
 
@@ -123,10 +123,42 @@ function syncChapterJumpList() {
     button.textContent = label;
     button.title = label;
     if (onClick) button.addEventListener("click", onClick);
-    chapterJumpList.append(button);
+    return button;
   };
 
-  addNavigationItem({
+  const addDeleteButton = (heading) => {
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className = "chapter-jump-delete";
+    deleteButton.textContent = "×";
+    deleteButton.setAttribute("aria-label", `Slett ${heading.textContent.trim() || "kapittel"}`);
+    deleteButton.title = "Slett dette kapitlet";
+    deleteButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      if (heading && heading.parentNode) {
+        heading.parentNode.removeChild(heading);
+      }
+      fields.body.value = sanitizeHtml(bodyEditor.innerHTML);
+      renderPreview();
+    });
+    return deleteButton;
+  };
+
+  const addListEntry = ({ label, level, onClick, deleteHeading = null }) => {
+    const item = document.createElement("div");
+    item.className = "chapter-jump-item-wrap";
+
+    const button = addNavigationItem({ label, level, onClick });
+    item.append(button);
+
+    if (deleteHeading) {
+      item.append(addDeleteButton(deleteHeading));
+    }
+
+    chapterJumpList.append(item);
+  };
+
+  addListEntry({
     label: bookTitle,
     level: 1,
     onClick: () => {
@@ -135,7 +167,7 @@ function syncChapterJumpList() {
     }
   });
 
-  addNavigationItem({
+  addListEntry({
     label: chapterTitle,
     level: 2,
     onClick: () => {
@@ -154,13 +186,14 @@ function syncChapterJumpList() {
 
   headings.forEach((heading) => {
     const label = (heading.textContent || "Avsnitt").trim() || "Avsnitt";
-    addNavigationItem({
+    addListEntry({
       label,
       level: heading.tagName === "H3" ? 3 : 2,
       onClick: () => {
         heading.scrollIntoView({ behavior: "smooth", block: "start" });
         bodyEditor.focus();
-      }
+      },
+      deleteHeading: heading
     });
   });
 }
