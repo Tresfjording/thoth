@@ -117,8 +117,6 @@ function syncChapterJumpList() {
   const chapterJumpList = document.querySelector("#chapter-jump-list");
   if (!chapterJumpList) return;
 
-  const bookTitle = (fields.title.value || "Boktittel").trim() || "Boktittel";
-  const chapterTitle = (fields.chapter.value || "Underkapittel").trim() || "Underkapittel";
   const headings = [...bodyEditor.querySelectorAll("h3")];
   chapterJumpList.replaceChildren();
 
@@ -165,24 +163,6 @@ function syncChapterJumpList() {
 
     chapterJumpList.append(item);
   };
-
-  addListEntry({
-    label: bookTitle,
-    level: 1,
-    onClick: () => {
-      fields.title.focus();
-      fields.title.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-  });
-
-  addListEntry({
-    label: chapterTitle,
-    level: 2,
-    onClick: () => {
-      fields.chapter.focus();
-      fields.chapter.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-  });
 
   if (!headings.length) {
     const emptyState = document.createElement("span");
