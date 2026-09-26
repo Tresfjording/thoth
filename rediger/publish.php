@@ -1,9 +1,24 @@
 <?php
+require __DIR__ . '/auth.php';
+
 const PUBLISH_TOKEN = '18105433324';
 define('OUTPUT_HTML_FILE', dirname(__DIR__) . '/arbeidskopi.html');
 define('LEGACY_JSON_FILE', dirname(__DIR__) . '/arbeidskopi.json');
 
 header('Content-Type: application/json; charset=utf-8');
+
+$currentUser = currentUser();
+if ($currentUser === null) {
+    http_response_code(401);
+    echo json_encode(['error' => 'Du må være innlogget for å publisere.']);
+    exit;
+}
+
+if (!isAdminUser($currentUser)) {
+    http_response_code(403);
+    echo json_encode(['error' => 'Bare administrator kan publisere. Lesere har kun lesetilgang.']);
+    exit;
+}
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -13,14 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $rawInput = file_get_contents('php://input');
 $input = json_decode($rawInput, true);
-$token = is_array($input) ? ($input['token'] ?? '') : '';
 $manuscript = is_array($input) ? ($input['manuscript'] ?? null) : null;
-
-if (!is_string($token) || !hash_equals(PUBLISH_TOKEN, $token)) {
-    http_response_code(401);
-    echo json_encode(['error' => 'Ugyldig publiseringsnøkkel.']);
-    exit;
-}
 
 if (!is_array($manuscript)) {
     http_response_code(400);
@@ -40,12 +48,64 @@ foreach ($allowedFields as $field) {
     $publishedCopy[$field] = $value;
 }
 
+$settingsPath = dirname(__DIR__) . '/data/book-settings.json';
+$settings = [];
+if (is_file($settingsPath)) {
+    $settingsJson = @file_get_contents($settingsPath);
+    if (is_string($settingsJson)) {
+        $decodedSettings = json_decode($settingsJson, true);
+        if (is_array($decodedSettings)) {
+            $settings = $decodedSettings;
+        }
+    }
+}
+
+if (isset($settings['book_title']) && trim((string) $settings['book_title']) !== '') {
+    $publishedCopy['title'] = trim((string) $settings['book_title']);
+}
+
+$chapterLabel = trim((string) ($settings['chapter_label'] ?? 'Kapittel'));
+if ($chapterLabel === '') {
+    $chapterLabel = 'Kapittel';
+}
+if (trim((string) ($publishedCopy['chapter'] ?? '')) === '' || trim((string) $publishedCopy['chapter']) === 'Arbeidsnotat' || trim((string) $publishedCopy['chapter']) === 'Kapittel 1') {
+    $publishedCopy['chapter'] = $chapterLabel;
+}
+
+$chaptersPath = dirname(__DIR__) . '/data/chapters.json';
+$storedChapters = [];
+if (is_file($chaptersPath)) {
+    $chaptersJson = @file_get_contents($chaptersPath);
+    if (is_string($chaptersJson)) {
+        $decodedChapters = json_decode($chaptersJson, true);
+        if (is_array($decodedChapters)) {
+            $storedChapters = $decodedChapters;
+        }
+    }
+}
+
 $publishedCopy['body'] = strip_tags(
     $publishedCopy['body'],
     '<p><br><strong><b><em><i><u><h2><h3><blockquote><ul><ol><li>'
 );
 $publishedCopy['body'] = preg_replace('/<\s*h2\b/i', '<h3', $publishedCopy['body']);
 $publishedCopy['body'] = preg_replace('/<\s*\/\s*h2\s*>/i', '</h3>', $publishedCopy['body']);
+
+if (trim($publishedCopy['body']) === '' && isset($storedChapters[0])) {
+    $chapterHtml = '';
+    foreach ($storedChapters as $chapterEntry) {
+        $title = trim((string) ($chapterEntry['title'] ?? ''));
+        $bodyContent = trim((string) ($chapterEntry['body'] ?? ''));
+        if ($title === '' && $bodyContent === '') {
+            continue;
+        }
+        $chapterHtml .= '<h3>' . htmlspecialchars($title !== '' ? $title : $chapterLabel, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</h3>';
+        if ($bodyContent !== '') {
+            $chapterHtml .= '<p>' . nl2br(htmlspecialchars($bodyContent, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')) . '</p>';
+        }
+    }
+    $publishedCopy['body'] = $chapterHtml;
+}
 
 $escape = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 $body = preg_replace(

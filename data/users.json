@@ -1,0 +1,29 @@
+[
+    {
+        "id": 1,
+        "username": "localtestuser5",
+        "password_hash": "$2y$12$te2n8xyJLqvP5lFv7lBD1.dsgBJkNKzHIK6TU7qOnQmJ62zPmR1U6",
+        "first_name": "Test",
+        "last_name": "Bruker",
+        "email": "test5@example.com",
+        "phone": "12345678"
+    },
+    {
+        "id": 2,
+        "username": "localtestuser6",
+        "password_hash": "$2y$12$NUbL2Yid3gEL5Lz8XFusM.ebwF9z.bVEcYRebNSHf1N915k5qcY1.",
+        "first_name": "Test",
+        "last_name": "Bruker",
+        "email": "test6@example.com",
+        "phone": "12345678"
+    },
+    {
+        "id": 3,
+        "username": "localtestuser7",
+        "password_hash": "$2y$12$OOJW3eHwYQYemnj5iQWz7.iLkQ7EqJuiUXYQGaxjvdpy1ekY11aj6",
+        "first_name": "Test",
+        "last_name": "Bruker",
+        "email": "test7@example.com",
+        "phone": "12345678"
+    }
+]

@@ -524,10 +524,36 @@ h2 {
 }
 
 /* Manusverksted */
+.header-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .save-status {
   color: var(--muted);
   font-size: 0.82rem;
   letter-spacing: 0.05em;
+}
+
+.auth-status {
+  color: var(--accent-deep);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.logout-link {
+  color: var(--accent-deep);
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.logout-link:hover,
+.logout-link:focus-visible {
+  text-decoration: underline;
 }
 
 .workspace {
@@ -625,6 +651,7 @@ h2 {
   display: flex;
   align-items: center;
   gap: 14px;
+  margin-left: auto;
 }
 
 .upload-button {
@@ -642,7 +669,8 @@ h2 {
   text-decoration: underline;
 }
 
-.text-clear-button {
+.text-clear-button,
+.text-delete-link {
   border: 0;
   padding: 0;
   color: var(--accent-deep);
@@ -654,7 +682,9 @@ h2 {
 }
 
 .text-clear-button:hover,
-.text-clear-button:focus-visible {
+.text-clear-button:focus-visible,
+.text-delete-link:hover,
+.text-delete-link:focus-visible {
   text-decoration: underline;
 }
 
@@ -743,14 +773,17 @@ h2 {
 }
 
 .chapter-jump-item-wrap {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   align-items: stretch;
   gap: 8px;
 }
 
 .chapter-jump-item {
-  flex: 1 1 auto;
   width: 100%;
+  display: block;
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
   border: 1px solid rgba(31, 26, 23, 0.12);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.7);
@@ -763,6 +796,7 @@ h2 {
   line-height: 1.35;
   white-space: normal;
   word-break: break-word;
+  overflow-wrap: anywhere;
   cursor: pointer;
   transition: background 150ms ease, transform 150ms ease, border-color 150ms ease;
 }

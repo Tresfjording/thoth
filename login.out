@@ -1,0 +1,8 @@
+<br />
+<b>Fatal error</b>:  Uncaught PDOException: could not find driver in C:\Users\ØyvindGranberg\Projects\thoth\rediger\auth.php:25
+Stack trace:
+#0 C:\Users\ØyvindGranberg\Projects\thoth\rediger\auth.php(25): PDO-&gt;__construct('sqlite:C:\\Users...')
+#1 C:\Users\ØyvindGranberg\Projects\thoth\rediger\auth.php(88): getDatabase()
+#2 C:\Users\ØyvindGranberg\Projects\thoth\rediger\login.php(34): loginUser('localtestuser3', 'Passord123')
+#3 {main}
+  thrown in <b>C:\Users\ØyvindGranberg\Projects\thoth\rediger\auth.php</b> on line <b>25</b><br />

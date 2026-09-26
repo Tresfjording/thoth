@@ -8,9 +8,13 @@ const bodyEditor = document.querySelector("#body-editor");
 const bookPage = document.querySelector("#book-page");
 const wordCount = document.querySelector("#word-count");
 const saveStatus = document.querySelector("#save-status");
+const authStatus = document.querySelector("#auth-status");
+const logoutLink = document.querySelector("#logout-link");
 const readModeButton = document.querySelector("#read-mode-button");
 const requestedChapter = new URLSearchParams(window.location.search).get("chapter") || window.location.hash.replace(/^#/, "");
 const storageKey = "thoth-manuscript";
+const SETTINGS_STORAGE_KEY = "thoth-book-settings";
+const CHAPTER_STORAGE_KEY = "thoth-chapter-list";
 
 const starterText = {
   title: "Skriv her",
@@ -124,6 +128,7 @@ function syncChapterJumpList() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "chapter-jump-item";
+    if (level === 1) button.classList.add("chapter-jump-item--chapter");
     if (level === 2) button.classList.add("chapter-jump-item--chapter");
     if (level === 3) button.classList.add("chapter-jump-item--section");
     button.textContent = label;
@@ -132,37 +137,24 @@ function syncChapterJumpList() {
     return button;
   };
 
-  const addDeleteButton = (heading) => {
-    const deleteButton = document.createElement("button");
-    deleteButton.type = "button";
-    deleteButton.className = "chapter-jump-delete";
-    deleteButton.textContent = "×";
-    deleteButton.setAttribute("aria-label", `Slett ${heading.textContent.trim() || "kapittel"}`);
-    deleteButton.title = "Slett dette kapitlet";
-    deleteButton.addEventListener("click", (event) => {
-      event.stopPropagation();
-      if (heading && heading.parentNode) {
-        heading.parentNode.removeChild(heading);
-      }
-      fields.body.value = sanitizeHtml(bodyEditor.innerHTML);
-      renderPreview();
-    });
-    return deleteButton;
-  };
-
-  const addListEntry = ({ label, level, onClick, deleteHeading = null }) => {
+  const addListEntry = ({ label, level, onClick }) => {
     const item = document.createElement("div");
     item.className = "chapter-jump-item-wrap";
 
     const button = addNavigationItem({ label, level, onClick });
     item.append(button);
-
-    if (deleteHeading) {
-      item.append(addDeleteButton(deleteHeading));
-    }
-
     chapterJumpList.append(item);
   };
+
+  const bookTitle = (fields.title.value || "Boktittel").trim() || "Boktittel";
+  addListEntry({
+    label: bookTitle,
+    level: 1,
+    onClick: () => {
+      fields.title.focus();
+      fields.title.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  });
 
   if (!headings.length) {
     const emptyState = document.createElement("span");
@@ -180,24 +172,102 @@ function syncChapterJumpList() {
       onClick: () => {
         heading.scrollIntoView({ behavior: "smooth", block: "start" });
         bodyEditor.focus();
-      },
-      deleteHeading: heading
+      }
     });
   });
 }
 
+async function loadBookSettings() {
+  try {
+    const response = await fetch("book-settings-api.php", { cache: "no-store" });
+    if (!response.ok) return null;
+    const payload = await response.json();
+    const settings = payload.settings || {};
+    const titleField = document.querySelector("#title");
+    const chapterField = document.querySelector("#chapter");
+    const isPlaceholderTitle = !titleField || !titleField.value.trim() || titleField.value.trim() === "Skriv her";
+    const isPlaceholderChapter = !chapterField || !chapterField.value.trim() || chapterField.value.trim() === starterText.chapter;
+
+    if (settings.book_title && isPlaceholderTitle) {
+      if (titleField) titleField.value = settings.book_title;
+      const storedManuscript = JSON.parse(localStorage.getItem(storageKey) || "null");
+      if (storedManuscript && (!storedManuscript.title || storedManuscript.title === "Skriv her")) {
+        storedManuscript.title = settings.book_title;
+        localStorage.setItem(storageKey, JSON.stringify(storedManuscript));
+      }
+    }
+
+    if (settings.chapter_label && isPlaceholderChapter && chapterField) {
+      chapterField.value = settings.chapter_label;
+    }
+
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+    return settings;
+  } catch (error) {
+    return null;
+  }
+}
+
+function buildChapterHtmlFromEntries(chapters) {
+  const entries = Array.isArray(chapters) ? chapters : [];
+  return entries
+    .filter((chapter) => chapter && (typeof chapter.title === "string" || typeof chapter.body === "string"))
+    .map((chapter) => {
+      const title = (chapter.title || "").trim();
+      const body = (chapter.body || "").trim();
+      const headingHtml = title ? `<h3>${escapeHtml(title)}</h3>` : "";
+      const bodyHtml = body ? `<p>${escapeHtml(body).replace(/\n/g, "<br>")}</p>` : "";
+      return `${headingHtml}${bodyHtml}`;
+    })
+    .join("");
+}
+
+async function loadSavedChapters() {
+  try {
+    const response = await fetch("chapter-manager-api.php", { cache: "no-store" });
+    if (!response.ok) return [];
+    const payload = await response.json();
+    const chapters = Array.isArray(payload.chapters) ? payload.chapters : [];
+    localStorage.setItem(CHAPTER_STORAGE_KEY, JSON.stringify(chapters));
+
+    const storedManuscript = JSON.parse(localStorage.getItem(storageKey) || "null");
+    const currentBody = storedManuscript && typeof storedManuscript.body === "string" ? storedManuscript.body.trim() : "";
+    if (chapters.length && !currentBody) {
+      const chapterHtml = buildChapterHtmlFromEntries(chapters);
+      if (chapterHtml.trim()) {
+        setBodyHtml(chapterHtml);
+        renderPreview();
+      }
+    }
+
+    return chapters;
+  } catch (error) {
+    return [];
+  }
+}
+
 function renderPreview() {
   const manuscript = getManuscript();
+  const savedSettings = JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY) || "null");
+  if (savedSettings && savedSettings.book_title && (!manuscript.title || manuscript.title === "Skriv her")) {
+    manuscript.title = savedSettings.book_title;
+  }
+
+  if (savedSettings && savedSettings.chapter_label && (!manuscript.chapter || manuscript.chapter === starterText.chapter)) {
+    manuscript.chapter = savedSettings.chapter_label;
+  }
+
   const cleanBody = sanitizeHtml(manuscript.body);
   const { toc, bodyHtml } = buildTableOfContents(cleanBody);
   bookPage.replaceChildren();
 
   const chapter = document.createElement("p");
   chapter.className = "preview-chapter";
-  chapter.textContent = manuscript.chapter || "Arbeidsnotat";
+  chapter.textContent = manuscript.chapter || savedSettings?.chapter_label || "Arbeidsnotat";
   bookPage.append(chapter);
 
-  const title = document.createElement("h2");
+  const title = document.createElement("h1");
+  title.className = "preview-title";
   title.textContent = manuscript.title || "Uten tittel";
   bookPage.append(title);
 
@@ -280,13 +350,38 @@ document.querySelector("#clear-body-button").addEventListener("click", () => {
   saveStatus.textContent = "Teksten er tømt";
 });
 
+document.querySelector("#delete-entry-button").addEventListener("click", () => {
+  setBodyHtml("");
+  renderPreview();
+  saveStatus.textContent = "Innslaget er slettet";
+});
+
+document.querySelector("#book-settings-button").addEventListener("click", () => {
+  window.location.href = "book-settings.php";
+});
+
+document.querySelector("#chapter-manager-button").addEventListener("click", () => {
+  window.location.href = "chapter-manager.php";
+});
+
 document.querySelector("#publish-button").addEventListener("click", async () => {
   const publishButton = document.querySelector("#publish-button");
-  const publishTokenField = document.querySelector("#publish-token");
-  const publishToken = publishTokenField.value.trim();
-  if (!publishToken) {
-    publishTokenField.focus();
-    saveStatus.textContent = "Skriv inn publiseringsnøkkelen først";
+
+  try {
+    const sessionResponse = await fetch("session-status.php", { cache: "no-store" });
+    if (!sessionResponse.ok) {
+      saveStatus.textContent = "Du må logge inn før du kan publisere.";
+      window.location.href = "login.php?next=" + encodeURIComponent("index.php");
+      return;
+    }
+
+    const status = await sessionResponse.json();
+    if (!status.isAdmin) {
+      saveStatus.textContent = "Bare administrator kan publisere. Lesere har kun lesetilgang.";
+      return;
+    }
+  } catch (error) {
+    saveStatus.textContent = "Kunne ikke verifisere innlogging. Logg inn og prøv igjen.";
     return;
   }
 
@@ -297,7 +392,7 @@ document.querySelector("#publish-button").addEventListener("click", async () => 
     const response = await fetch("publish.php", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token: publishToken, manuscript: getManuscript() })
+      body: JSON.stringify({ manuscript: getManuscript() })
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || "Publisering mislyktes.");
@@ -327,5 +422,45 @@ document.querySelector("#upload-text").addEventListener("change", async (event) 
   event.target.value = "";
 });
 
+async function updateAuthStatus() {
+  if (!authStatus) return;
+
+  const publishButton = document.querySelector("#publish-button");
+
+  try {
+    const response = await fetch("session-status.php", { cache: "no-store" });
+    const status = await response.json();
+    if (!response.ok || !status.loggedIn) {
+      authStatus.textContent = "Ikke innlogget";
+      if (logoutLink) logoutLink.style.display = "none";
+      if (publishButton) {
+        publishButton.style.display = "none";
+      }
+      return;
+    }
+
+    const displayName = status.displayName || status.username || "Bruker";
+    authStatus.textContent = `Innlogget som ${displayName}`;
+    const canPublish = !!status.isAdmin;
+
+    if (publishButton) {
+      publishButton.style.display = canPublish ? "inline-flex" : "none";
+      publishButton.disabled = false;
+      publishButton.title = canPublish ? "Publiser arbeidskopi" : "Kun administrator kan publisere";
+    }
+
+    if (logoutLink) logoutLink.style.display = "inline";
+  } catch (error) {
+    authStatus.textContent = "Sikkerhetsstatus ukjent";
+    if (logoutLink) logoutLink.style.display = "none";
+    if (publishButton) {
+      publishButton.style.display = "none";
+    }
+  }
+}
+
 const storedManuscript = JSON.parse(localStorage.getItem(storageKey) || "null");
 setManuscript(storedManuscript || starterText);
+updateAuthStatus();
+loadBookSettings();
+loadSavedChapters();

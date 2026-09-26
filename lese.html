@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="no">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+    <title>Thoth | Lese</title>
+    <style>
+      :root {
+        --bg: #eee2d6;
+        --panel: #f8f2ed;
+        --ink: #1f1a17;
+        --muted: #5d4f47;
+        --accent: #8d3f25;
+        --line: rgba(31, 26, 23, 0.14);
+        --shadow: 0 18px 40px rgba(43, 29, 18, 0.08);
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body {
+        margin: 0;
+        min-height: 100%;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: Arial, sans-serif;
+      }
+
+      body {
+        min-height: 100vh;
+        padding: 24px;
+      }
+
+      .reader-shell {
+        max-width: 1100px;
+        margin: 0 auto;
+        background: rgba(255, 255, 255, 0.22);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .reader-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        padding: 18px 20px;
+        border-bottom: 1px solid var(--line);
+        background: rgba(255,255,255,0.12);
+      }
+
+      .reader-header h1 {
+        margin: 0;
+        font-size: clamp(1.5rem, 2.6vw, 2.4rem);
+      }
+
+      .reader-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .reader-button,
+      .reader-header a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        border-radius: 10px;
+        padding: 10px 14px;
+        font: inherit;
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .reader-header a {
+        color: var(--accent);
+      }
+
+      .reader-button {
+        border: 1px solid var(--accent);
+        background: var(--accent);
+        color: #fff;
+        cursor: pointer;
+      }
+
+      .reader-button.is-active {
+        background: transparent;
+        color: var(--accent);
+      }
+
+      .reader-layout {
+        display: grid;
+        grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+        min-height: 680px;
+      }
+
+      .reader-menu {
+        padding: 20px 18px;
+        border-right: 1px solid var(--line);
+        background: rgba(255,255,255,0.08);
+      }
+
+      .reader-menu h2 {
+        margin: 0 0 18px;
+        font-size: 1rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .reader-menu-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .chapter-button {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: rgba(255,255,255,0.4);
+        color: var(--ink);
+        text-align: left;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .chapter-button.is-active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+      }
+
+      .reader-body {
+        padding: 30px 28px 40px;
+      }
+
+      body.reading-mode .reader-layout {
+        grid-template-columns: minmax(220px, 280px) minmax(0, 1.7fr);
+      }
+
+      body.reading-mode .reader-body {
+        padding-right: 40px;
+      }
+
+      body.reading-mode .protected-text {
+        max-width: 940px;
+      }
+
+      .protected-text {
+        max-width: 760px;
+        margin: 0 auto;
+        background: #fffaf2;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: clamp(24px, 5vw, 56px);
+        box-shadow: 0 12px 28px rgba(68, 43, 21, 0.06);
+        user-select: none;
+        -webkit-user-select: none;
+        -ms-user-select: none;
+        -webkit-touch-callout: none;
+      }
+
+      .protected-text * {
+        user-select: none;
+        -webkit-user-select: none;
+        -ms-user-select: none;
+      }
+
+      .protected-text h2 {
+        margin: 0 0 18px;
+        font-size: clamp(2rem, 4vw, 3rem);
+        line-height: 1.08;
+      }
+
+      .protected-text h3 {
+        margin: 36px 0 16px;
+        font-size: clamp(1.5rem, 2vw, 2.2rem);
+        line-height: 1.1;
+      }
+
+      .protected-text p {
+        margin: 0 0 1.2em;
+        font-size: 1.15rem;
+        line-height: 1.7;
+      }
+
+      .protected-text em {
+        color: var(--muted);
+      }
+
+      .protected-text small {
+        color: var(--muted);
+      }
+
+      .security-modal {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(31, 26, 23, 0.42);
+        padding: 20px;
+      }
+
+      .security-modal.is-visible {
+        display: flex;
+      }
+
+      .security-dialog {
+        width: min(100%, 480px);
+        background: #fffaf2;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        box-shadow: var(--shadow);
+        padding: 28px 24px;
+      }
+
+      .security-dialog h3 {
+        margin: 0 0 12px;
+        font-size: clamp(1.8rem, 4vw, 2.4rem);
+      }
+
+      .security-dialog p {
+        margin: 0 0 22px;
+        color: var(--muted);
+        line-height: 1.6;
+        font-size: 1.05rem;
+      }
+
+      .security-dialog button {
+        display: inline-block;
+        padding: 12px 18px;
+        border: none;
+        border-radius: 10px;
+        background: var(--accent);
+        color: white;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      @media (max-width: 800px) {
+        .reader-layout {
+          grid-template-columns: 1fr;
+        }
+
+        .reader-menu {
+          border-right: none;
+          border-bottom: 1px solid var(--line);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="reader-shell">
+      <header class="reader-header">
+        <h1>Thoth</h1>
+        <div class="reader-actions">
+          <button id="reading-mode-button" class="reader-button" type="button" aria-pressed="false">Lesemodus</button>
+          <a href="./index.html">Tilbake til inngang</a>
+        </div>
+      </header>
+
+      <div class="reader-layout">
+        <aside class="reader-menu">
+          <h2>Publiserte dokument</h2>
+          <div id="chapter-menu" class="reader-menu-list" aria-live="polite"></div>
+        </aside>
+
+        <section class="reader-body">
+          <article id="protected-text" class="protected-text" aria-live="polite"></article>
+        </section>
+      </div>
+    </main>
+
+    <div id="security-modal" class="security-modal" role="dialog" aria-modal="true" aria-labelledby="security-title">
+      <div class="security-dialog">
+        <h3 id="security-title">Beskyttet materiale</h3>
+        <p>Teksten i dette dokumentet er beskyttet. Markering og kopiering er ikke tillatt.</p>
+        <button id="security-ok" type="button">OK</button>
+      </div>
+    </div>
+
+    <script>
+      const chapterMenu = document.getElementById('chapter-menu');
+      const protectedText = document.getElementById('protected-text');
+      const securityModal = document.getElementById('security-modal');
+      const securityOk = document.getElementById('security-ok');
+      const readingModeButton = document.getElementById('reading-mode-button');
+      const homeUrl = 'https://www.tresfjording.no/thoth/index.html';
+      const fallbackHomeUrl = './index.html';
+
+      const setReadingMode = (enabled) => {
+        document.body.classList.toggle('reading-mode', enabled);
+        readingModeButton.classList.toggle('is-active', enabled);
+        readingModeButton.setAttribute('aria-pressed', String(enabled));
+        readingModeButton.textContent = enabled ? 'Normalvisning' : 'Lesemodus';
+      };
+
+      readingModeButton.addEventListener('click', () => {
+        const enabled = !document.body.classList.contains('reading-mode');
+        setReadingMode(enabled);
+      });
+
+      const showSecurityDialog = () => {
+        securityModal.classList.add('is-visible');
+      };
+
+      const goHome = () => {
+        window.location.href = homeUrl;
+      };
+
+      document.addEventListener('contextmenu', (event) => {
+        if (event.target.closest('.protected-text')) {
+          event.preventDefault();
+          showSecurityDialog();
+        }
+      }, { passive: false });
+
+      document.addEventListener('copy', (event) => {
+        if (event.target.closest('.protected-text')) {
+          event.preventDefault();
+          showSecurityDialog();
+        }
+      }, { passive: false });
+
+      document.addEventListener('cut', (event) => {
+        if (event.target.closest('.protected-text')) {
+          event.preventDefault();
+          showSecurityDialog();
+        }
+      }, { passive: false });
+
+      document.addEventListener('keydown', (event) => {
+        const isSelectionKey = ((event.ctrlKey || event.metaKey) && ['c', 'C', 'x', 'X', 'a', 'A', 'p', 'P', 's', 'S'].includes(event.key));
+        if (event.key === 'PrintScreen' || event.key === 'Insert' || isSelectionKey) {
+          event.preventDefault();
+          showSecurityDialog();
+        }
+      });
+
+      document.addEventListener('selectstart', (event) => {
+        if (event.target.closest('.protected-text')) {
+          event.preventDefault();
+          showSecurityDialog();
+        }
+      }, true);
+
+      document.addEventListener('dragstart', (event) => {
+        if (event.target.closest('.protected-text')) {
+          event.preventDefault();
+          showSecurityDialog();
+        }
+      }, true);
+
+      securityOk.addEventListener('click', () => {
+        securityModal.classList.remove('is-visible');
+        window.location.href = window.location.hostname === 'localhost' ? fallbackHomeUrl : homeUrl;
+      });
+
+      async function loadPublishedDocument() {
+        try {
+          const response = await fetch('./arbeidskopi.html', { cache: 'no-store' });
+          if (!response.ok) {
+            throw new Error('Klarte ikke å laste publisert dokument.');
+          }
+
+          const html = await response.text();
+          const doc = new DOMParser().parseFromString(html, 'text/html');
+          const headingNodes = [...doc.querySelectorAll('h3')].filter((heading) => {
+            const title = heading.textContent.trim();
+            return title && !/^Kapittel\s*\d*$/i.test(title);
+          });
+
+          if (!headingNodes.length) {
+            protectedText.innerHTML = '<p>Det finnes ingen publiserte kapitler ennå.</p>';
+            return;
+          }
+
+          const sections = headingNodes.map((heading, index) => {
+            const section = document.createElement('section');
+            let node = heading.nextElementSibling;
+            while (node && node.tagName !== 'H2' && node.tagName !== 'H3') {
+              section.appendChild(node.cloneNode(true));
+              node = node.nextElementSibling;
+            }
+
+            return {
+              title: heading.textContent.trim(),
+              content: section.innerHTML || '<p>Innholdet er tomt.</p>'
+            };
+          });
+
+          const renderSection = (index) => {
+            const section = sections[index];
+            chapterMenu.querySelectorAll('.chapter-button').forEach((button, buttonIndex) => {
+              button.classList.toggle('is-active', buttonIndex === index);
+            });
+
+            protectedText.innerHTML = `
+              <h2>${section.title}</h2>
+              ${section.content}
+            `;
+          };
+
+          chapterMenu.innerHTML = '';
+          sections.forEach((section, index) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'chapter-button';
+            button.textContent = section.title;
+            button.addEventListener('click', () => renderSection(index));
+            chapterMenu.appendChild(button);
+          });
+
+          renderSection(0);
+        } catch (error) {
+          protectedText.innerHTML = '<p>Det finnes ingen publisert dokument å lese akkurat nå.</p>';
+        }
+      }
+
+      loadPublishedDocument();
+    </script>
+  </body>
+</html>

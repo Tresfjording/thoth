@@ -76,7 +76,6 @@
                       <label class="upload-button" for="upload-text">Last opp</label>
                       <input id="upload-text" type="file" accept=".txt,.html,.htm,text/plain,text/html" hidden>
                       <button class="text-clear-button" id="clear-body-button" type="button">Tøm tekst</button>
-                      <button class="text-delete-link" id="delete-entry-button" type="button">Slett innslag</button>
                     </div>
                   </div>
                   <textarea id="body" name="body" hidden=""></textarea>
@@ -236,13 +235,18 @@ vår egen biologiske form en dag ikke lenger strekker til.</p>
 
 <p>yvind A. F. Granberg</p></div>
 
+                  <div class="publish-access">
+                    <label for="publish-token">Publiseringsnøkkel</label>
+                    <input id="publish-token" type="password" autocomplete="off" placeholder="Skriv inn nøkkelen">
+                  </div>
+
                   <div class="editor-actions">
                     <button class="button button-primary" id="import-button" type="button">Importer fra tekst</button>
                     <button class="button button-secondary" id="clear-button" type="button">Tøm</button>
                     <button class="button button-secondary" id="read-mode-button" type="button">Lesemodus</button>
                     <button class="button button-secondary" id="book-settings-button" type="button">Bokinstillinger</button>
                     <button class="button button-secondary" id="chapter-manager-button" type="button">Kapittel</button>
-                    <button class="button button-secondary" id="publish-button" type="button" style="display:none;">Publiser!</button>
+                    <button class="button button-secondary" id="publish-button" type="button">Publiser!</button>
                   </div>
                   <p class="helper-text">Importer bruker første linje som tittel, første avsnitt som ingress og resten som manus.</p>
                 </div>

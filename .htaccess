@@ -1,0 +1,21 @@
+RewriteEngine On
+
+# Send users back to the public landing page if they try to reach a Thoth subfolder or private path.
+RewriteRule ^thoth/(?!index\.html$).*$ /thoth/index.html [R=302,L,NE]
+
+# Deny obvious scraper and scanner bots while allowing normal visitors and search engines.
+SetEnvIfNoCase User-Agent "^$" BadBot
+SetEnvIfNoCase User-Agent "^-" BadBot
+SetEnvIfNoCase User-Agent "(curl|wget|python-requests|python-urllib|libwww-perl|scrapy|aiohttp|httpx|Go-http-client|java/|nmap|nikto|sqlmap|masscan|sqlninja|havij|acunetix|nessus|zgrab|httpie|metasploit|paloaltonetworks|semrush|ahrefs|mj12bot|petalbot|dotbot|sitechecker|siteliner|dataforseo)" BadBot
+
+<IfModule mod_authz_core.c>
+    <RequireAll>
+        Require all granted
+        Require not env BadBot
+    </RequireAll>
+</IfModule>
+
+# If your host is on Apache 2.2 instead of 2.4, you can use this alternative instead:
+# Order allow,deny
+# Allow from all
+# Deny from env=BadBot
