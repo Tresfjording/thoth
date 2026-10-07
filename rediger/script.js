@@ -21,16 +21,15 @@ const starterText = {
   intro: "En tekst begynner ofte som en liten setning som nekter å forsvinne.",
   author: "",
   chapter: "Kapittel 1",
-  body: "<p>Lim inn teksten din her.</p><p>Hvert tomrom mellom avsnitt blir bevart i bokvisningen.</p>"
+  body: "<p>Lim inn teksten din her.</p><p>Hvert tomrom mellom avsnitt blir bevart i visningen.</p>"
 };
 
 const allowedTags = new Set(["P", "BR", "STRONG", "B", "EM", "I", "U", "H3", "BLOCKQUOTE", "UL", "OL", "LI"]);
 
 function normalizeSectionHeadings(html) {
   return html
-    .replace(/<\s*h2\b/gi, "<h3")
-    .replace(/<\s*\/\s*h2\s*>/gi, "</h3>")
-    .replace(/<\s*h2\s*\>/gi, "<h3>");
+    .replace(/<\s*h[1-6]\b/gi, "<h3")
+    .replace(/<\s*\/\s*h[1-6]\s*>/gi, "</h3>");
 }
 
 function sanitizeHtml(html) {
@@ -44,6 +43,121 @@ function sanitizeHtml(html) {
     [...element.attributes].forEach((attribute) => element.removeAttribute(attribute.name));
   });
   return documentFragment.body.innerHTML;
+}
+
+function convertWordHtml(html) {
+  const parsedHtml = new DOMParser().parseFromString(html, "text/html");
+
+  const convertNode = (node) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      return document.createTextNode(node.textContent || "");
+    }
+    if (!(node instanceof Element)) return null;
+
+    const sourceTag = node.tagName.toLowerCase();
+    const classNames = node.getAttribute("class") || "";
+    const style = node.getAttribute("style") || "";
+    const headingParagraph = sourceTag === "p"
+      && node.textContent.trim().length <= 200
+      && (
+        /(^|\s)(MsoHeading[1-6]|Heading[1-6])(\s|$)/i.test(classNames)
+        || /mso-outline-level\s*:\s*[1-6]\b/i.test(style)
+      );
+    const wordListParagraph = sourceTag === "p" && (
+      /\bMsoListParagraph/i.test(classNames) || /mso-list\s*:/i.test(style)
+    );
+    const heading = (/^h[1-6]$/.test(sourceTag) && node.textContent.trim().length <= 200) || headingParagraph;
+    const tagName = heading ? "h3" : wordListParagraph ? "li" : ({
+      div: "div",
+      p: "p",
+      br: "br",
+      strong: "strong",
+      b: "strong",
+      em: "em",
+      i: "em",
+      u: "u",
+      blockquote: "blockquote",
+      ul: "ul",
+      ol: "ol",
+      li: "li"
+    }[sourceTag] || (/^h[1-6]$/.test(sourceTag) ? "p" : "span"));
+    const element = document.createElement(tagName);
+    const marker = wordListParagraph
+      ? node.querySelector('span[style*="mso-list:Ignore"], span[style*="mso-list: Ignore"]')
+      : null;
+    const markerText = marker?.textContent.trim() || "";
+    const listType = /^\d+[\.)]$|^[a-z][\.)]$/i.test(markerText) ? "ol" : "ul";
+
+    node.childNodes.forEach((child) => {
+      if (child !== marker) {
+        const converted = convertNode(child);
+        if (converted) element.append(converted);
+      }
+    });
+
+    if (wordListParagraph) {
+      element.dataset.wordListType = listType;
+    }
+
+    const isBold = /^(bold|bolder)$/i.test(style.match(/font-weight\s*:\s*([^;]+)/i)?.[1]?.trim() || "")
+      || Number(style.match(/font-weight\s*:\s*(\d+)/i)?.[1]) >= 600;
+    const isItalic = /font-style\s*:\s*italic/i.test(style);
+    const isUnderline = /text-decoration(?:-line)?\s*:[^;]*underline/i.test(style);
+    const wrappers = [];
+    if (isBold && !heading && !["strong", "b"].includes(sourceTag)) wrappers.push("strong");
+    if (isItalic && !["em", "i"].includes(sourceTag)) wrappers.push("em");
+    if (isUnderline && sourceTag !== "u") wrappers.push("u");
+
+    let result = element;
+    wrappers.forEach((wrapperTag) => {
+      const wrapper = document.createElement(wrapperTag);
+      wrapper.append(result);
+      result = wrapper;
+    });
+    if (wrappers.length && ["p", "h3", "li", "div", "blockquote", "ul", "ol"].includes(tagName)) {
+      const content = document.createDocumentFragment();
+      while (element.firstChild) content.append(element.firstChild);
+      let wrappedContent = content;
+      wrappers.forEach((wrapperTag) => {
+        const wrapper = document.createElement(wrapperTag);
+        wrapper.append(wrappedContent);
+        wrappedContent = wrapper;
+      });
+      element.append(wrappedContent);
+      return element;
+    }
+    return result;
+  };
+
+  const fragment = document.createDocumentFragment();
+  [...parsedHtml.body.childNodes].forEach((node) => {
+    const converted = convertNode(node);
+    if (converted) fragment.append(converted);
+  });
+
+  const groupWordLists = (parent) => {
+    [...parent.children].forEach(groupWordLists);
+    let node = parent.firstChild;
+    while (node) {
+      if (node.nodeType !== Node.ELEMENT_NODE || !node.matches("li[data-word-list-type]")) {
+        node = node.nextSibling;
+        continue;
+      }
+
+      const listType = node.dataset.wordListType;
+      const list = document.createElement(listType);
+      parent.insertBefore(list, node);
+      while (node?.nodeType === Node.ELEMENT_NODE
+        && node.matches(`li[data-word-list-type="${listType}"]`)) {
+        const next = node.nextSibling;
+        node.removeAttribute("data-word-list-type");
+        list.append(node);
+        node = next;
+      }
+    }
+  };
+  groupWordLists(fragment);
+  return sanitizeHtml([...fragment.childNodes].map((node) => node.outerHTML || escapeHtml(node.textContent || "")).join(""));
 }
 
 function slugify(text) {
@@ -146,7 +260,7 @@ function syncChapterJumpList() {
     chapterJumpList.append(item);
   };
 
-  const bookTitle = (fields.title.value || "Boktittel").trim() || "Boktittel";
+  const bookTitle = (fields.title.value || "Tittel på innlegg").trim() || "Overskrift";
   addListEntry({
     label: bookTitle,
     level: 1,
@@ -159,7 +273,7 @@ function syncChapterJumpList() {
   if (!headings.length) {
     const emptyState = document.createElement("span");
     emptyState.className = "chapter-jump-empty";
-    emptyState.textContent = "Ingen underkapitler ennå";
+    emptyState.textContent = "Ingen avsnitt ennå";
     chapterJumpList.append(emptyState);
     return;
   }
@@ -319,6 +433,72 @@ bodyEditor.addEventListener("input", () => {
   fields.body.value = sanitizeHtml(bodyEditor.innerHTML);
   renderPreview();
 });
+
+bodyEditor.addEventListener("paste", (event) => {
+  const clipboard = event.clipboardData;
+  if (!clipboard) return;
+
+  const html = clipboard.getData("text/html");
+  const plainText = clipboard.getData("text/plain").replace(/\r\n?/g, "\n");
+  const richText = html ? convertWordHtml(html) : "";
+  const pastedText = plainText.trim();
+  const pastedHtml = richText || (pastedText ? pastedText.split(/\n\s*\n/).map((paragraph) => (
+      `<p>${escapeHtml(paragraph).replace(/\n/g, "<br>")}</p>`
+    )).join("") : "");
+  if (!pastedHtml) return;
+
+  event.preventDefault();
+  bodyEditor.focus();
+  insertBlocksAtSelection(pastedHtml);
+  bodyEditor.dispatchEvent(new Event("input", { bubbles: true }));
+});
+
+function insertBlocksAtSelection(html) {
+  const selection = window.getSelection();
+  const selectedRange = selection?.rangeCount ? selection.getRangeAt(0) : null;
+  const range = selectedRange && bodyEditor.contains(selectedRange.commonAncestorContainer)
+    ? selectedRange
+    : document.createRange();
+  if (range !== selectedRange) {
+    range.selectNodeContents(bodyEditor);
+    range.collapse(false);
+  } else {
+    range.deleteContents();
+  }
+
+  const fragment = range.createContextualFragment(html);
+  const lastNode = fragment.lastChild;
+
+  // Overskrifter og lister må ligge direkte i editoren, ikke inni et avsnitt
+  let block = range.startContainer;
+  while (block && block.parentNode !== bodyEditor) block = block.parentNode;
+
+  if (block && block !== bodyEditor) {
+    if (!block.textContent.trim()) {
+      block.replaceWith(fragment);
+    } else {
+      const tail = document.createRange();
+      tail.setStart(range.startContainer, range.startOffset);
+      tail.setEnd(block, block.childNodes.length);
+      const rest = block.cloneNode(false);
+      rest.append(tail.extractContents());
+      block.after(rest);
+      block.after(fragment);
+      if (!rest.textContent.trim()) rest.remove();
+      if (!block.textContent.trim()) block.remove();
+    }
+  } else {
+    range.insertNode(fragment);
+  }
+
+  if (lastNode && selection) {
+    const caret = document.createRange();
+    caret.setStartAfter(lastNode);
+    caret.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(caret);
+  }
+}
 
 document.querySelector("#import-button").addEventListener("click", () => {
   const lines = bodyEditor.innerText.trim().split("\n");

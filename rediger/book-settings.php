@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $chapterLabel = trim((string) ($_POST['chapter_label'] ?? ''));
 
     if ($title === '') {
-        $errors[] = 'Boktittel er påkrevd.';
+        $errors[] = 'Tittel er påkrevd.';
     }
     if ($chapterLabel === '') {
         $errors[] = 'Kapitteltekst er påkrevd.';
@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         file_put_contents($path, json_encode($settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), LOCK_EX);
-        $success = 'Bokinstillingene ble lagret.';
+        $success = 'Instillingene ble lagret.';
     }
 }
 
@@ -50,7 +50,7 @@ if (is_file($settingsPath)) {
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>THOTH | Bokinstillinger</title>
+    <title>THOTH | Innstilliger</title>
     <style>
         :root {
             --bg: #f6efe8;
@@ -142,13 +142,13 @@ if (is_file($settingsPath)) {
         <?php endif; ?>
 
         <form method="post" action="book-settings.php">
-            <label for="book_title">Boktittel</label>
+            <label for="book_title">Innleggstittel</label>
             <input id="book_title" name="book_title" type="text" value="<?php echo htmlspecialchars($bookTitle, ENT_QUOTES, 'UTF-8'); ?>" required>
 
             <label for="chapter_label">Standard kapittellabel</label>
             <input id="chapter_label" name="chapter_label" type="text" value="<?php echo htmlspecialchars($chapterLabel, ENT_QUOTES, 'UTF-8'); ?>" required>
 
-            <button type="submit">Lagre bokinstillinger</button>
+            <button type="submit">Lagre Innstillinger</button>
         </form>
 
         <div class="nav">
