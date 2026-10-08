@@ -190,6 +190,56 @@
         line-height: 1.7;
       }
 
+      .protected-text img {
+        display: block;
+        max-width: 100%;
+        height: auto;
+        margin: 1.4em auto;
+        border-radius: 6px;
+        -webkit-user-drag: none;
+      }
+
+      .protected-text {
+        display: flow-root;
+      }
+
+      .protected-text figure {
+        width: 100%;
+        margin: 1.4em auto;
+      }
+
+      .protected-text figure img {
+        width: 100%;
+        margin: 0;
+      }
+
+      .protected-text figure.img-size-25 { width: 25%; }
+      .protected-text figure.img-size-50 { width: 50%; }
+      .protected-text figure.img-size-75 { width: 75%; }
+      .protected-text figure.img-size-100 { width: 100%; }
+      .protected-text figure.img-align-left { margin: 1.4em auto 1.4em 0; }
+      .protected-text figure.img-align-right { margin: 1.4em 0 1.4em auto; }
+      .protected-text figure.img-wrap.img-align-left { float: left; margin: 0.3em 1.4em 1em 0; }
+      .protected-text figure.img-wrap.img-align-right { float: right; margin: 0.3em 0 1em 1.4em; }
+
+      @media (max-width: 600px) {
+        .protected-text figure.img-wrap { float: none !important; margin: 1.4em auto !important; }
+      }
+
+      .protected-text figcaption {
+        margin-top: 0.5em;
+        color: var(--muted);
+        font-size: 0.9rem;
+        font-style: italic;
+        line-height: 1.4;
+        text-align: center;
+      }
+
+      .protected-text h2,
+      .protected-text h3 {
+        clear: both;
+      }
+
       .protected-text em {
         color: var(--muted);
       }
@@ -364,9 +414,33 @@
         window.location.href = window.location.hostname === 'localhost' ? fallbackHomeUrl : homeUrl;
       });
 
-      async function loadPublishedDocument() {
+      async function loadPostList() {
+        chapterMenu.innerHTML = '';
+        let posts = [];
         try {
-          const response = await fetch('./arbeidskopi.html', { cache: 'no-store' });
+          const response = await fetch('./innlegg/index.json', { cache: 'no-store' });
+          if (response.ok) posts = await response.json();
+        } catch (error) {}
+
+        if (!Array.isArray(posts) || !posts.length) {
+          return loadPublishedDocument('./arbeidskopi.html');
+        }
+
+        const esc = (value) => String(value ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+        chapterMenu.innerHTML = posts.map((post) =>
+          `<a class="chapter-button" style="display:block;text-decoration:none" href="?innlegg=${encodeURIComponent(post.id)}">${esc(post.title || post.chapter || 'Uten tittel')}</a>`
+        ).join('');
+        protectedText.innerHTML = '<h2>Innlegg</h2>' + posts.map((post) => {
+          const date = post.published_at ? new Date(post.published_at).toLocaleDateString('nb-NO') : '';
+          return `<p><a href="?innlegg=${encodeURIComponent(post.id)}" style="color:var(--accent);text-decoration:none;font-weight:700;font-size:1.15em">${esc(post.title || post.chapter || 'Uten tittel')}</a>`
+            + (date ? `<br><small>${esc(date)}</small>` : '')
+            + (post.intro ? `<br>${esc(post.intro)}` : '') + '</p>';
+        }).join('');
+      }
+
+      async function loadPublishedDocument(url) {
+        try {
+          const response = await fetch(url, { cache: 'no-store' });
           if (!response.ok) {
             throw new Error('Klarte ikke å laste publisert dokument.');
           }
@@ -385,6 +459,15 @@
 
           const sections = headingNodes.map((heading, index) => {
             const section = document.createElement('section');
+            if (index === 0) {
+              let previous = heading.previousElementSibling;
+              const leading = [];
+              while (previous && previous.tagName !== 'H2' && previous.tagName !== 'H3') {
+                if (previous.textContent.trim() || previous.querySelector('img') || previous.tagName === 'IMG') leading.unshift(previous);
+                previous = previous.previousElementSibling;
+              }
+              leading.forEach((node) => section.appendChild(node.cloneNode(true)));
+            }
             let node = heading.nextElementSibling;
             while (node && node.tagName !== 'H2' && node.tagName !== 'H3') {
               section.appendChild(node.cloneNode(true));
@@ -425,7 +508,18 @@
         }
       }
 
-      loadPublishedDocument();
+      const requestedPost = new URLSearchParams(window.location.search).get('innlegg');
+      if (requestedPost && /^[a-z0-9-]{4,40}$/.test(requestedPost)) {
+        const back = document.createElement('a');
+        back.href = 'lese.html';
+        back.textContent = '← Alle innlegg';
+        back.style.display = 'block';
+        back.style.marginBottom = '12px';
+        chapterMenu.parentElement.insertBefore(back, chapterMenu);
+        loadPublishedDocument('./innlegg/' + requestedPost + '.html');
+      } else {
+        loadPostList();
+      }
     </script>
   </body>
 </html>

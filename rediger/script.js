@@ -15,6 +15,19 @@ const requestedChapter = new URLSearchParams(window.location.search).get("chapte
 const storageKey = "thoth-manuscript";
 const SETTINGS_STORAGE_KEY = "thoth-book-settings";
 const CHAPTER_STORAGE_KEY = "thoth-chapter-list";
+const POST_ID_KEY = "thoth-post-id";
+const newPostId = () => {
+  const bytes = crypto.getRandomValues(new Uint8Array(4));
+  return new Date().toISOString().slice(0, 10).replace(/-/g, "") + "-" + [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
+};
+const getPostId = () => {
+  let id = localStorage.getItem(POST_ID_KEY);
+  if (!id) {
+    id = newPostId();
+    localStorage.setItem(POST_ID_KEY, id);
+  }
+  return id;
+};
 
 const starterText = {
   title: "Skriv her",
@@ -24,7 +37,21 @@ const starterText = {
   body: "<p>Lim inn teksten din her.</p><p>Hvert tomrom mellom avsnitt blir bevart i visningen.</p>"
 };
 
-const allowedTags = new Set(["P", "BR", "STRONG", "B", "EM", "I", "U", "H3", "BLOCKQUOTE", "UL", "OL", "LI"]);
+const allowedTags = new Set(["P", "BR", "STRONG", "B", "EM", "I", "U", "H3", "BLOCKQUOTE", "UL", "OL", "LI", "IMG", "FIGURE", "FIGCAPTION"]);
+const uploadedImagePattern = /^(?:https?:\/\/[^/\s"'<>]+)?\/?[\w/.-]*innlegg\/bilder\/[\w-]+\.(?:jpg|jpeg|png|gif|webp)$/i;
+const dataImagePattern = /^data:image\/(?:png|jpeg|gif|webp);base64,/i;
+const figureClassPattern = /^img-(?:wrap|align-(?:left|center|right)|size-(?:25|50|75|100))$/;
+let skippedWordImages = 0;
+
+function createFigureElement(doc, src, alt) {
+  const figure = doc.createElement("figure");
+  figure.className = "img-align-center img-size-75";
+  const image = doc.createElement("img");
+  image.setAttribute("src", src);
+  image.setAttribute("alt", alt || "");
+  figure.append(image);
+  return figure;
+}
 
 function normalizeSectionHeadings(html) {
   return html
@@ -32,16 +59,50 @@ function normalizeSectionHeadings(html) {
     .replace(/<\s*\/\s*h[1-6]\s*>/gi, "</h3>");
 }
 
-function sanitizeHtml(html) {
+function sanitizeHtml(html, keepDataImages = false) {
   const normalizedHtml = normalizeSectionHeadings(html);
   const documentFragment = new DOMParser().parseFromString(normalizedHtml, "text/html");
   documentFragment.body.querySelectorAll("*").forEach((element) => {
+    if (element.tagName === "FIGURE") {
+      const classes = [...element.classList].filter((name) => figureClassPattern.test(name));
+      [...element.attributes].forEach((attribute) => element.removeAttribute(attribute.name));
+      if (classes.length) element.className = classes.join(" ");
+      return;
+    }
+    if (element.tagName === "IMG") {
+      const src = element.getAttribute("src") || "";
+      const alt = element.getAttribute("alt") || "";
+      if (!uploadedImagePattern.test(src) && !(keepDataImages && dataImagePattern.test(src))) {
+        element.remove();
+        return;
+      }
+      [...element.attributes].forEach((attribute) => element.removeAttribute(attribute.name));
+      element.setAttribute("src", src);
+      element.setAttribute("alt", alt);
+      return;
+    }
     if (!allowedTags.has(element.tagName)) {
       element.replaceWith(...element.childNodes);
       return;
     }
     [...element.attributes].forEach((attribute) => element.removeAttribute(attribute.name));
   });
+
+  if (!keepDataImages) {
+    documentFragment.body.querySelectorAll("img").forEach((image) => {
+      if (image.closest("figure")) return;
+      const figure = createFigureElement(documentFragment, image.getAttribute("src"), image.getAttribute("alt"));
+      const parent = image.parentElement;
+      if (parent && parent.tagName === "P" && parent.childNodes.length === 1) {
+        parent.replaceWith(figure);
+      } else if (parent && parent.tagName === "P") {
+        parent.after(figure);
+        image.remove();
+      } else {
+        image.replaceWith(figure);
+      }
+    });
+  }
   return documentFragment.body.innerHTML;
 }
 
@@ -54,7 +115,17 @@ function convertWordHtml(html) {
     }
     if (!(node instanceof Element)) return null;
 
-    const sourceTag = node.tagName.toLowerCase();
+    if (node.tagName === "IMG") {
+      const src = node.getAttribute("src") || "";
+      if (/^data:image\/(?:png|jpeg|gif|webp);base64,/i.test(src)) {
+        const image = document.createElement("img");
+        image.setAttribute("src", src);
+        return image;
+      }
+      skippedWordImages += 1;
+      return null;
+    }
+
     const classNames = node.getAttribute("class") || "";
     const style = node.getAttribute("style") || "";
     const headingParagraph = sourceTag === "p"
@@ -157,7 +228,7 @@ function convertWordHtml(html) {
     }
   };
   groupWordLists(fragment);
-  return sanitizeHtml([...fragment.childNodes].map((node) => node.outerHTML || escapeHtml(node.textContent || "")).join(""));
+  return sanitizeHtml([...fragment.childNodes].map((node) => node.outerHTML || escapeHtml(node.textContent || "")).join(""), true);
 }
 
 function slugify(text) {
@@ -247,7 +318,10 @@ function syncChapterJumpList() {
     if (level === 3) button.classList.add("chapter-jump-item--section");
     button.textContent = label;
     button.title = label;
-    if (onClick) button.addEventListener("click", onClick);
+    if (onClick) {
+      button.addEventListener("mousedown", (event) => event.preventDefault());
+      button.addEventListener("click", onClick);
+    }
     return button;
   };
 
@@ -284,8 +358,17 @@ function syncChapterJumpList() {
       label,
       level: heading.tagName === "H3" ? 3 : 2,
       onClick: () => {
-        heading.scrollIntoView({ behavior: "smooth", block: "start" });
-        bodyEditor.focus();
+        bodyEditor.focus({ preventScroll: true });
+        const caret = document.createRange();
+        caret.selectNodeContents(heading);
+        caret.collapse(true);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(caret);
+        // Egen rulling, med plass til den faste toppbaren
+        const headerHeight = document.querySelector(".site-header")?.offsetHeight || 0;
+        const top = heading.getBoundingClientRect().top + window.scrollY - headerHeight - 48;
+        window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
       }
     });
   });
@@ -438,7 +521,15 @@ bodyEditor.addEventListener("paste", (event) => {
   const clipboard = event.clipboardData;
   if (!clipboard) return;
 
+  const pastedImage = [...clipboard.files].find((file) => file.type.startsWith("image/"));
+  if (pastedImage && !clipboard.getData("text/plain").trim()) {
+    event.preventDefault();
+    uploadAndInsertImage(pastedImage);
+    return;
+  }
+
   const html = clipboard.getData("text/html");
+  skippedWordImages = 0;
   const plainText = clipboard.getData("text/plain").replace(/\r\n?/g, "\n");
   const richText = html ? convertWordHtml(html) : "";
   const pastedText = plainText.trim();
@@ -451,6 +542,10 @@ bodyEditor.addEventListener("paste", (event) => {
   bodyEditor.focus();
   insertBlocksAtSelection(pastedHtml);
   bodyEditor.dispatchEvent(new Event("input", { bubbles: true }));
+  if (/<img\b/i.test(pastedHtml)) uploadPastedDataImages();
+  if (skippedWordImages) {
+    saveStatus.textContent = `${skippedWordImages} bilde(r) fra Word kunne ikke limes inn sammen med teksten. Kopier bildet alene i Word og lim det inn, eller bruk Bilde-knappen.`;
+  }
 });
 
 function insertBlocksAtSelection(html) {
@@ -500,6 +595,238 @@ function insertBlocksAtSelection(html) {
   }
 }
 
+function toggleHeadingAtSelection() {
+  const selection = window.getSelection();
+  if (!selection?.rangeCount || !bodyEditor.contains(selection.anchorNode)) return;
+
+  let block = selection.anchorNode;
+  while (block && block.parentNode !== bodyEditor) block = block.parentNode;
+  if (!block || block.nodeType !== Node.ELEMENT_NODE) return;
+
+  const offset = selection.anchorOffset;
+  const anchor = selection.anchorNode;
+  const replacement = document.createElement(block.tagName === "H3" ? "p" : "h3");
+  replacement.append(...block.childNodes);
+  block.replaceWith(replacement);
+
+  const range = document.createRange();
+  if (replacement.contains(anchor)) {
+    range.setStart(anchor, Math.min(offset, anchor.nodeType === Node.TEXT_NODE ? anchor.length : anchor.childNodes.length));
+  } else {
+    range.setStart(replacement, 0);
+  }
+  range.collapse(true);
+  selection.removeAllRanges();
+  selection.addRange(range);
+  bodyEditor.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+const imageButton = document.querySelector("#image-button");
+const imageInput = document.querySelector("#image-input");
+let imageRange = null;
+imageButton.addEventListener("mousedown", (event) => {
+  event.preventDefault();
+  const selection = window.getSelection();
+  imageRange = selection?.rangeCount && bodyEditor.contains(selection.anchorNode) ? selection.getRangeAt(0).cloneRange() : null;
+});
+imageButton.addEventListener("click", () => imageInput.click());
+imageInput.addEventListener("change", () => {
+  const file = imageInput.files[0];
+  imageInput.value = "";
+  if (file) uploadAndInsertImage(file);
+});
+
+async function uploadImageFile(file) {
+  const formData = new FormData();
+  formData.append("image", file, file.name || "bilde.png");
+  const response = await fetch("upload-image.php", { method: "POST", body: formData });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.error || "Opplasting av bildet mislyktes.");
+  return result.url;
+}
+
+async function uploadAndInsertImage(file) {
+  if (!imageRange) {
+    const selection = window.getSelection();
+    imageRange = selection?.rangeCount && bodyEditor.contains(selection.anchorNode) ? selection.getRangeAt(0).cloneRange() : null;
+  }
+  saveStatus.textContent = "Laster opp bilde ...";
+  try {
+    const url = await uploadImageFile(file);
+    if (imageRange) {
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(imageRange);
+    }
+    imageRange = null;
+    const alt = (file.name || "bilde").replace(/\.[^.]+$/, "").replace(/["<>&]/g, "");
+    insertBlocksAtSelection(`<figure class="img-align-center img-size-75"><img src="${url}" alt="${alt}"></figure><p><br></p>`);
+    bodyEditor.dispatchEvent(new Event("input", { bubbles: true }));
+    saveStatus.textContent = "Bildet er satt inn. Klikk på det for størrelse, plassering og bildetekst.";
+  } catch (error) {
+    saveStatus.textContent = error instanceof TypeError
+      ? "Bildeopplasting krever at Thoth kjører på en server med PHP."
+      : error.message;
+  }
+}
+
+async function uploadPastedDataImages() {
+  const images = [...bodyEditor.querySelectorAll('img[src^="data:image/"]')];
+  let failed = 0;
+  for (const image of images) {
+    try {
+      const blob = await (await fetch(image.src)).blob();
+      const extension = (blob.type.split("/")[1] || "png").replace("jpeg", "jpg");
+      const url = await uploadImageFile(new File([blob], `word-bilde.${extension}`, { type: blob.type }));
+      const figure = createFigureElement(document, url, "");
+      const parent = image.parentElement;
+      if (parent && parent.tagName === "P" && parent.parentElement === bodyEditor && parent.childNodes.length === 1) {
+        parent.replaceWith(figure);
+      } else {
+        let block = image;
+        while (block.parentNode && block.parentNode !== bodyEditor) block = block.parentNode;
+        image.remove();
+        block.after(figure);
+      }
+    } catch (error) {
+      failed += 1;
+      image.remove();
+    }
+  }
+  bodyEditor.dispatchEvent(new Event("input", { bubbles: true }));
+  if (failed) saveStatus.textContent = `${failed} bilde(r) fra Word kunne ikke lastes opp.`;
+}
+
+const imageToolbar = document.createElement("div");
+imageToolbar.className = "image-toolbar";
+imageToolbar.hidden = true;
+imageToolbar.innerHTML = `
+  <div class="image-toolbar-row"><span>Størrelse</span>${[25, 50, 75, 100].map((size) => `<button type="button" data-size="${size}">${size} %</button>`).join("")}</div>
+  <div class="image-toolbar-row"><span>Plassering</span>
+    <button type="button" data-align="left">Venstre</button>
+    <button type="button" data-align="center">Midt</button>
+    <button type="button" data-align="right">Høyre</button>
+  </div>
+  <div class="image-toolbar-row"><span>Tekst</span><button type="button" data-wrap="toggle">Tekst rundt bildet</button></div>
+  <input type="text" class="image-caption-input" placeholder="Bildetekst (valgfritt)" maxlength="300">
+  <div class="image-toolbar-row"><button type="button" data-action="remove">Fjern bilde</button></div>`;
+document.body.append(imageToolbar);
+const captionInput = imageToolbar.querySelector(".image-caption-input");
+let selectedFigure = null;
+
+function positionImageToolbar() {
+  if (!selectedFigure) return;
+  const rect = selectedFigure.getBoundingClientRect();
+  const width = imageToolbar.offsetWidth;
+  const height = imageToolbar.offsetHeight;
+  imageToolbar.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - width - 8))}px`;
+  imageToolbar.style.top = `${Math.max(90, Math.min(rect.bottom + 8, window.innerHeight - height - 8))}px`;
+}
+
+function updateToolbarState() {
+  const has = (prefix, value) => selectedFigure.classList.contains(prefix + value);
+  imageToolbar.querySelectorAll("[data-size]").forEach((button) => button.classList.toggle("is-active", has("img-size-", button.dataset.size)));
+  imageToolbar.querySelectorAll("[data-align]").forEach((button) => button.classList.toggle("is-active", has("img-align-", button.dataset.align)));
+  const wrapButton = imageToolbar.querySelector("[data-wrap]");
+  const canWrap = !selectedFigure.classList.contains("img-align-center") && !selectedFigure.classList.contains("img-size-100");
+  wrapButton.disabled = !canWrap;
+  wrapButton.title = canWrap ? "" : "Velg Venstre eller Høyre og en størrelse under 100 % for å bryte tekst rundt bildet";
+  wrapButton.classList.toggle("is-active", canWrap && selectedFigure.classList.contains("img-wrap"));
+}
+
+function selectFigure(figure) {
+  deselectFigure();
+  selectedFigure = figure;
+  figure.classList.add("img-selected");
+  captionInput.value = figure.querySelector("figcaption")?.textContent || "";
+  imageToolbar.hidden = false;
+  updateToolbarState();
+  positionImageToolbar();
+}
+
+function deselectFigure() {
+  selectedFigure?.classList.remove("img-selected");
+  selectedFigure = null;
+  imageToolbar.hidden = true;
+}
+
+function notifyImageChange() {
+  bodyEditor.dispatchEvent(new Event("input", { bubbles: true }));
+  requestAnimationFrame(positionImageToolbar);
+}
+
+bodyEditor.addEventListener("click", (event) => {
+  const image = event.target instanceof Element ? event.target.closest("img") : null;
+  if (!image || !bodyEditor.contains(image)) return;
+  let figure = image.closest("figure");
+  if (!figure) {
+    figure = createFigureElement(document, image.getAttribute("src"), image.getAttribute("alt"));
+    const parent = image.parentElement;
+    if (parent && parent.tagName === "P" && parent.childNodes.length === 1) parent.replaceWith(figure);
+    else image.replaceWith(figure);
+    notifyImageChange();
+  }
+  selectFigure(figure);
+});
+
+document.addEventListener("mousedown", (event) => {
+  if (!selectedFigure || !(event.target instanceof Element)) return;
+  if (imageToolbar.contains(event.target) || event.target.closest("#body-editor img")) return;
+  deselectFigure();
+});
+
+imageToolbar.addEventListener("mousedown", (event) => {
+  if (event.target.closest("button")) event.preventDefault();
+});
+
+imageToolbar.addEventListener("click", (event) => {
+  const button = event.target.closest("button");
+  if (!button || !selectedFigure) return;
+  const setClass = (prefix, value) => {
+    [...selectedFigure.classList].filter((name) => name.startsWith(prefix)).forEach((name) => selectedFigure.classList.remove(name));
+    selectedFigure.classList.add(prefix + value);
+  };
+  if (button.dataset.size) setClass("img-size-", button.dataset.size);
+  if (button.dataset.align) setClass("img-align-", button.dataset.align);
+  if (button.dataset.wrap) selectedFigure.classList.toggle("img-wrap");
+  if (button.dataset.action === "remove") {
+    selectedFigure.remove();
+    deselectFigure();
+    notifyImageChange();
+    return;
+  }
+  updateToolbarState();
+  notifyImageChange();
+});
+
+captionInput.addEventListener("input", () => {
+  if (!selectedFigure) return;
+  let caption = selectedFigure.querySelector("figcaption");
+  if (!captionInput.value.trim()) {
+    caption?.remove();
+  } else {
+    if (!caption) {
+      caption = document.createElement("figcaption");
+      selectedFigure.append(caption);
+    }
+    caption.textContent = captionInput.value;
+  }
+  notifyImageChange();
+});
+
+window.addEventListener("scroll", positionImageToolbar, { passive: true });
+window.addEventListener("resize", positionImageToolbar);
+
+const headingButton = document.querySelector("#heading-button");
+headingButton.addEventListener("mousedown", (event) => event.preventDefault());
+headingButton.addEventListener("click", toggleHeadingAtSelection);
+bodyEditor.addEventListener("keydown", (event) => {
+  if (event.ctrlKey && event.altKey && event.key === "3") {
+    event.preventDefault();
+    toggleHeadingAtSelection();
+  }
+});
+
 document.querySelector("#import-button").addEventListener("click", () => {
   const lines = bodyEditor.innerText.trim().split("\n");
   if (lines[0]) fields.title.value = lines.shift().trim();
@@ -512,7 +839,8 @@ document.querySelector("#import-button").addEventListener("click", () => {
 
 document.querySelector("#clear-button").addEventListener("click", () => {
   setManuscript({ title: "", intro: "", author: "", chapter: "", body: "" });
-  saveStatus.textContent = "Tomt manus";
+  localStorage.setItem(POST_ID_KEY, newPostId());
+  saveStatus.textContent = "Nytt innlegg startet";
 });
 
 readModeButton.addEventListener("click", () => {
@@ -572,12 +900,13 @@ document.querySelector("#publish-button").addEventListener("click", async () => 
     const response = await fetch("publish.php", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ manuscript: getManuscript() })
+      body: JSON.stringify({ manuscript: getManuscript(), post_id: getPostId() })
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || "Publisering mislyktes.");
-    const publicUrl = "https://www.tresfjording.no/thoth/arbeidskopi.html?v=" + Date.now();
-    saveStatus.innerHTML = `<a href="${publicUrl}" target="_blank" rel="noopener">Åpne publisert arbeidskopi</a>`;
+          if (result.post_id) localStorage.setItem(POST_ID_KEY, result.post_id);
+          const publicUrl = "https://www.tresfjording.no/thoth/lese.html?innlegg=" + encodeURIComponent(result.post_id) + "&v=" + Date.now();
+          saveStatus.innerHTML = `<a href="${publicUrl}" target="_blank" rel="noopener">Åpne publisert innlegg</a>`;
   } catch (error) {
     const message = error instanceof TypeError
       ? "Publisering krever at Thoth er åpnet fra tresfjording.no, ikke som lokal fil."
@@ -622,6 +951,8 @@ async function updateAuthStatus() {
     const displayName = status.displayName || status.username || "Bruker";
     authStatus.textContent = `Innlogget som ${displayName}`;
     const canPublish = !!status.isAdmin;
+    const postsButton = document.querySelector("#posts-button");
+    if (postsButton) postsButton.style.display = canPublish ? "inline-flex" : "none";
 
     if (publishButton) {
       publishButton.style.display = canPublish ? "inline-flex" : "none";
@@ -641,6 +972,110 @@ async function updateAuthStatus() {
 
 const storedManuscript = JSON.parse(localStorage.getItem(storageKey) || "null");
 setManuscript(storedManuscript || starterText);
+
+const postsDialog = document.createElement("div");
+postsDialog.className = "posts-dialog";
+postsDialog.hidden = true;
+postsDialog.innerHTML = `
+  <div class="posts-dialog-box" role="dialog" aria-modal="true" aria-label="Mine innlegg">
+    <div class="posts-dialog-head"><strong>Publiserte innlegg</strong><button type="button" data-close>Lukk</button></div>
+    <p class="posts-dialog-status"></p>
+    <ul class="posts-dialog-list"></ul>
+  </div>`;
+document.body.append(postsDialog);
+const postsList = postsDialog.querySelector(".posts-dialog-list");
+const postsStatus = postsDialog.querySelector(".posts-dialog-status");
+
+async function loadPostsDialog() {
+  postsList.replaceChildren();
+  postsStatus.textContent = "Laster ...";
+  try {
+    const response = await fetch(`../innlegg/index.json?v=${Date.now()}`, { cache: "no-store" });
+    const posts = response.ok ? await response.json() : [];
+    postsStatus.textContent = posts.length ? "" : "Ingen publiserte innlegg ennå.";
+    posts.forEach((post) => {
+      const item = document.createElement("li");
+      const label = document.createElement("span");
+      const date = post.published_at ? new Date(post.published_at).toLocaleDateString("nb-NO") : "";
+      label.textContent = `${post.title || post.chapter || "Uten tittel"}${date ? ` (${date})` : ""}`;
+      if (post.id === getPostId()) label.textContent += " – åpent nå";
+      const open = document.createElement("button");
+      open.type = "button";
+      open.textContent = "Åpne";
+      open.addEventListener("click", () => openPublishedPost(post));
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.textContent = "Slett";
+      remove.className = "danger";
+      remove.addEventListener("click", () => deletePublishedPost(post));
+      item.append(label, open, remove);
+      postsList.append(item);
+    });
+  } catch (error) {
+    postsStatus.textContent = "Kunne ikke hente innleggene.";
+  }
+}
+
+async function openPublishedPost(post) {
+  if (!confirm("Åpne dette innlegget? Teksten i editoren nå erstattes (publiserte innlegg er upåvirket).")) return;
+  postsStatus.textContent = "Åpner innlegget ...";
+  try {
+    const response = await fetch(`posts-api.php?id=${encodeURIComponent(post.id)}`, { cache: "no-store" });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Kunne ikke åpne innlegget.");
+    let manuscript = result.manuscript;
+    if (!manuscript) {
+      const page = await fetch(`../innlegg/${encodeURIComponent(post.id)}.html?v=${Date.now()}`, { cache: "no-store" });
+      if (!page.ok) throw new Error("Fant ikke det publiserte innlegget.");
+      const doc = new DOMParser().parseFromString(await page.text(), "text/html");
+      const smalls = doc.querySelectorAll("main small");
+      manuscript = {
+        title: doc.querySelector("main h1")?.textContent || post.title || "",
+        intro: doc.querySelector("main > p > em")?.textContent || "",
+        chapter: smalls[0]?.textContent || "",
+        author: smalls.length > 1 ? smalls[smalls.length - 1].textContent : "",
+        body: doc.querySelector("article")?.innerHTML || ""
+      };
+    }
+    localStorage.setItem(POST_ID_KEY, post.id);
+    setManuscript({
+      title: manuscript.title || "",
+      intro: manuscript.intro || "",
+      author: manuscript.author || "",
+      chapter: manuscript.chapter || "",
+      body: manuscript.body || ""
+    });
+    postsDialog.hidden = true;
+    saveStatus.textContent = "Innlegget er åpnet. Trykk Publiser for å oppdatere det.";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  } catch (error) {
+    postsStatus.textContent = error.message;
+  }
+}
+
+async function deletePublishedPost(post) {
+  if (!confirm(`Slette «${post.title || "Uten tittel"}» fra nettstedet? Dette kan ikke angres.`)) return;
+  try {
+    const response = await fetch("posts-api.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "delete", id: post.id })
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Kunne ikke slette innlegget.");
+    await loadPostsDialog();
+  } catch (error) {
+    postsStatus.textContent = error.message;
+  }
+}
+
+document.querySelector("#posts-button").addEventListener("click", () => {
+  postsDialog.hidden = false;
+  loadPostsDialog();
+});
+postsDialog.addEventListener("click", (event) => {
+  if (event.target === postsDialog || event.target.closest("[data-close]")) postsDialog.hidden = true;
+});
 updateAuthStatus();
 loadBookSettings();
 loadSavedChapters();

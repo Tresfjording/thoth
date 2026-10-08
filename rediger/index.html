@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com/">
     <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
     <link href="./index_files/css2" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20260919-4">
+    <link rel="stylesheet" href="styles.css?v=20261007-6">
   </head>
   <body>
     <div class="page-shell">
@@ -75,6 +75,9 @@
                     <div class="text-field-actions">
                       <label class="upload-button" for="upload-text">Last opp</label>
                       <input id="upload-text" type="file" accept=".txt,.html,.htm,text/plain,text/html" hidden>
+                      <button class="text-clear-button" id="heading-button" type="button" title="Gjør avsnittet der markøren står om til overskrift (Ctrl+Alt+3)">Overskrift</button>
+                      <button class="text-clear-button" id="image-button" type="button" title="Sett inn bilde der markøren står">Bilde</button>
+                      <input id="image-input" type="file" accept="image/jpeg,image/png,image/gif,image/webp" hidden>
                       <button class="text-clear-button" id="clear-body-button" type="button">Tøm tekst</button>
                       <button class="text-delete-link" id="delete-entry-button" type="button">Slett innslag</button>
                     </div>
@@ -239,10 +242,11 @@ vår egen biologiske form en dag ikke lenger strekker til.</p>
 
                   <div class="editor-actions">
                     <button class="button button-primary" id="import-button" type="button">Importer fra tekst</button>
-                    <button class="button button-secondary" id="clear-button" type="button">Tøm</button>
+                    <button class="button button-secondary" id="clear-button" type="button">Nytt innlegg</button>
                     <button class="button button-secondary" id="read-mode-button" type="button">Lesemodus</button>
                     <button class="button button-secondary" id="book-settings-button" type="button">Bokinstillinger</button>
                     <button class="button button-secondary" id="chapter-manager-button" type="button">Avsnitt</button>
+                    <button class="button button-secondary" id="posts-button" type="button" style="display:none;">Mine innlegg</button>
                     <button class="button button-secondary" id="publish-button" type="button" style="display:none;">Publiser!</button>
                   </div>
                   <p class="helper-text">Importer bruker første linje som tittel, første avsnitt som ingress og resten som manus.</p>
@@ -426,6 +430,6 @@ vår egen biologiske form en dag ikke lenger strekker til.</p>
         }
       })();
     </script>
-    <script src="script.js?v=20261007-3"></script>
+    <script src="script.js?v=20261007-13"></script>
   
 </body></html>
