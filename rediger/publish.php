@@ -37,7 +37,7 @@ if (!is_array($manuscript)) {
     exit;
 }
 
-$allowedFields = ['title', 'intro', 'author', 'chapter', 'body'];
+$allowedFields = ['title', 'intro', 'author', 'chapter', 'category', 'body'];
 $publishedCopy = [];
 foreach ($allowedFields as $field) {
     $value = $manuscript[$field] ?? '';
@@ -47,6 +47,21 @@ foreach ($allowedFields as $field) {
         exit;
     }
     $publishedCopy[$field] = $value;
+}
+
+$categoriesPath = dirname(__DIR__) . '/data/categories.json';
+$categories = [];
+if (is_file($categoriesPath)) {
+    $decodedCategories = json_decode((string) @file_get_contents($categoriesPath), true);
+    if (is_array($decodedCategories)) {
+        $categories = array_values(array_filter($decodedCategories, 'is_string'));
+    }
+}
+$publishedCopy['category'] = trim($publishedCopy['category']);
+if ($publishedCopy['category'] !== '' && !in_array($publishedCopy['category'], $categories, true)) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Kategorien finnes ikke. Registrer kategorien før publisering.']);
+    exit;
 }
 
 $postId = strtolower(trim((string) ($input['post_id'] ?? '')));
@@ -93,8 +108,18 @@ if (is_file($chaptersPath)) {
 
 $publishedCopy['body'] = strip_tags(
     $publishedCopy['body'],
-    '<p><br><strong><b><em><i><u><h2><h3><blockquote><ul><ol><li><img><figure><figcaption>'
+    '<p><br><strong><b><em><i><u><a><h2><h3><blockquote><ul><ol><li><img><figure><figcaption>'
 );
+$publishedCopy['body'] = preg_replace_callback('/<a\b[^>]*>(.*?)<\/a>/is', static function (array $match): string {
+    if (!preg_match('/\shref="([^"]+)"/i', $match[0], $hrefMatch)) {
+        return $match[1];
+    }
+    $href = html_entity_decode($hrefMatch[1], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    if (!preg_match('#^https?://[^\s<>"\']+$#i', $href)) {
+        return $match[1];
+    }
+    return '<a href="' . htmlspecialchars($href, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '" target="_blank" rel="noopener noreferrer">' . $match[1] . '</a>';
+}, $publishedCopy['body']);
 $publishedCopy['body'] = preg_replace_callback('/<figure\b[^>]*>/i', static function (array $match): string {
     $classes = [];
     if (preg_match('/\bclass="([^"]*)"/i', $match[0], $classMatch)) {
@@ -173,7 +198,7 @@ $html = '<!doctype html><html lang="no"><head><meta charset="utf-8">'
     . 'nav{position:sticky;top:40px;align-self:start;padding:18px 0}.nav-label{margin:0 0 18px;color:var(--muted);font:700 11px/1.2 Arial,sans-serif;letter-spacing:.16em;text-transform:uppercase}'
     . '.chapter-item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0}.chapter-item a{display:block;color:var(--muted);font:15px/1.35 Arial,sans-serif;text-decoration:none;border-left:2px solid transparent;padding-left:14px}.chapter-item a:hover{color:var(--accent);border-color:var(--accent)}.chapter-edit{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)!important;border-left:none!important;padding-left:0!important}.nav-empty{color:var(--muted);font:14px Arial,sans-serif}'
     . '.book{padding:72px clamp(32px,8vw,88px);background:var(--paper);box-shadow:0 18px 45px rgba(68,43,21,.12)}'
-    . 'h1{margin:18px 0 24px;font-size:clamp(2.6rem,6vw,4.5rem);line-height:.98}h3{scroll-margin-top:32px;margin:56px 0 18px;font-size:2rem;line-height:1.1}em{color:var(--muted)}img{display:block;max-width:100%;height:auto;margin:1.4em auto;border-radius:6px;-webkit-user-drag:none}article{display:flow-root}figure{width:100%;margin:1.4em auto}figure img{width:100%;margin:0}figure.img-size-25{width:25%}figure.img-size-50{width:50%}figure.img-size-75{width:75%}figure.img-size-100{width:100%}figure.img-align-left{margin:1.4em auto 1.4em 0}figure.img-align-right{margin:1.4em 0 1.4em auto}figure.img-wrap.img-align-left{float:left;margin:.3em 1.4em 1em 0}figure.img-wrap.img-align-right{float:right;margin:.3em 0 1em 1.4em}figcaption{margin-top:.5em;color:var(--muted);font-size:.9rem;font-style:italic;line-height:1.4;text-align:center}h3{clear:both}@media(max-width:600px){figure.img-wrap{float:none!important;margin:1.4em auto!important}}article{margin-top:34px}small{color:var(--muted)}'
+    . 'h1{margin:18px 0 24px;font-size:clamp(2.6rem,6vw,4.5rem);line-height:.98}h3{scroll-margin-top:32px;margin:56px 0 18px;font-size:2rem;line-height:1.1}em{color:var(--muted)}article a{color:inherit;text-decoration-color:#f00;text-decoration-thickness:2px;text-underline-offset:.15em}img{display:block;max-width:100%;height:auto;margin:1.4em auto;border-radius:6px;-webkit-user-drag:none}article{display:flow-root}figure{width:100%;margin:1.4em auto}figure img{width:100%;margin:0}figure.img-size-25{width:25%}figure.img-size-50{width:50%}figure.img-size-75{width:75%}figure.img-size-100{width:100%}figure.img-align-left{margin:1.4em auto 1.4em 0}figure.img-align-right{margin:1.4em 0 1.4em auto}figure.img-wrap.img-align-left{float:left;margin:.3em 1.4em 1em 0}figure.img-wrap.img-align-right{float:right;margin:.3em 0 1em 1.4em}figcaption{margin-top:.5em;color:var(--muted);font-size:.9rem;font-style:italic;line-height:1.4;text-align:center}h3{clear:both}@media(max-width:600px){figure.img-wrap{float:none!important;margin:1.4em auto!important}}article{margin-top:34px}small{color:var(--muted)}'
     . '.locked{padding:80px 24px;text-align:center;color:var(--muted);font:600 18px/1.6 Arial,sans-serif}.locked strong{display:block;color:var(--ink);font-size:2rem;margin-bottom:12px}'
     . '@media(max-width:800px){.layout{display:block;padding:24px 14px}.layout nav{position:static;padding:0 10px 24px}.layout nav a{display:inline-block;margin-right:14px}.book{padding:42px 28px}}'
     . '</style>'
@@ -192,7 +217,7 @@ $html = '<!doctype html><html lang="no"><head><meta charset="utf-8">'
     . '})();</script><div class="layout">' . $chapterNavigation
     . '<main class="book"><small>' . $escape($publishedCopy['chapter']) . '</small>'
     . '<h1>' . $escape($publishedCopy['title']) . '</h1>'
-    . '<p><em>' . $escape($publishedCopy['intro']) . '</em></p>'
+    . '<p><em>' . nl2br($escape($publishedCopy['intro'])) . '</em></p>'
     . '<article>' . $body . '</article>'
     . '<p><small>' . $escape($publishedCopy['author']) . '</small></p></main></div>'
     . '</body></html>';
@@ -223,6 +248,7 @@ array_unshift($postIndex, [
     'id' => $postId,
     'title' => trim($publishedCopy['title']),
     'chapter' => trim($publishedCopy['chapter']),
+    'category' => trim($publishedCopy['category']),
     'intro' => trim($publishedCopy['intro']),
     'published_at' => date('c'),
 ]);

@@ -2,11 +2,15 @@
 const SESSION_INACTIVITY_SECONDS = 1800;
 
 if (session_status() === PHP_SESSION_NONE) {
+    $isHttps = isset($_SERVER['HTTPS'])
+        && $_SERVER['HTTPS'] !== ''
+        && strtolower((string) $_SERVER['HTTPS']) !== 'off';
     session_set_cookie_params([
         'lifetime' => SESSION_INACTIVITY_SECONDS,
         'path' => '/',
-        'secure' => false,
+        'secure' => $isHttps,
         'httponly' => true,
+        'samesite' => 'Lax',
     ]);
     session_start();
 }
@@ -118,6 +122,13 @@ function getDatabase(): ?PDO
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             )'
         );
+        $pdo->exec(
+            'CREATE TABLE IF NOT EXISTS password_resets (
+                user_id INTEGER PRIMARY KEY,
+                token_hash TEXT NOT NULL,
+                expires_at INTEGER NOT NULL
+            )'
+        );
 
         return $pdo;
     } catch (Throwable $exception) {
@@ -190,6 +201,7 @@ function loginUser(string $username, string $password): ?array
             return null;
         }
 
+        session_regenerate_id(true);
         $_SESSION['user_id'] = (int) $user['id'];
         $_SESSION['username'] = $user['username'];
         $_SESSION['display_name'] = trim($user['first_name'] . ' ' . $user['last_name']);
@@ -199,6 +211,7 @@ function loginUser(string $username, string $password): ?array
 
     foreach (loadUsersFromJson() as $user) {
         if (strcasecmp((string) ($user['username'] ?? ''), $username) === 0 && password_verify($password, (string) ($user['password_hash'] ?? ''))) {
+            session_regenerate_id(true);
             $_SESSION['user_id'] = (int) $user['id'];
             $_SESSION['username'] = $user['username'];
             $_SESSION['display_name'] = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''));
@@ -239,46 +252,124 @@ function findUserByUsernameAndEmail(string $username, string $email): ?array
     return null;
 }
 
-function resetUserPassword(string $username, string $email): array
+function clearPasswordReset(int $userId): void
 {
-    $user = findUserByUsernameAndEmail($username, $email);
-    if ($user === null) {
-        return ['ok' => false, 'errors' => ['Fant ingen brukerkonto med dette brukernavnet og e-postadressen.']];
-    }
-
-    $newPassword = 'Thoth-' . bin2hex(random_bytes(4));
     $pdo = getDatabase();
     if ($pdo !== null) {
-        try {
-            $statement = $pdo->prepare('UPDATE users SET password_hash = :password_hash WHERE id = :id');
-            $statement->execute([
-                ':password_hash' => password_hash($newPassword, PASSWORD_DEFAULT),
-                ':id' => (int) $user['id'],
-            ]);
-
-            return ['ok' => true, 'errors' => [], 'new_password' => $newPassword];
-        } catch (Throwable $exception) {
-            return ['ok' => false, 'errors' => ['Kunne ikke nullstille passordet. Prøv igjen.']];
-        }
+        $statement = $pdo->prepare('DELETE FROM password_resets WHERE user_id = :user_id');
+        $statement->execute([':user_id' => $userId]);
+        return;
     }
 
     $users = loadUsersFromJson();
-    $updated = false;
-    foreach ($users as $index => $storedUser) {
-        if ((int) ($storedUser['id'] ?? 0) !== (int) ($user['id'] ?? 0)) {
+    foreach ($users as $index => $user) {
+        if ((int) ($user['id'] ?? 0) === $userId) {
+            unset($users[$index]['password_reset_hash'], $users[$index]['password_reset_expires']);
+            saveUsersToJson(array_values($users));
+            return;
+        }
+    }
+}
+
+function requestPasswordReset(string $username, string $email): array
+{
+    $user = findUserByUsernameAndEmail($username, $email);
+    if ($user === null) {
+        return ['ok' => true, 'errors' => []];
+    }
+
+    $userId = (int) $user['id'];
+    $token = bin2hex(random_bytes(32));
+    $tokenHash = hash('sha256', $token);
+    $expiresAt = time() + 1800;
+    $pdo = getDatabase();
+    if ($pdo !== null) {
+        $statement = $pdo->prepare(
+            'INSERT OR REPLACE INTO password_resets (user_id, token_hash, expires_at)
+             VALUES (:user_id, :token_hash, :expires_at)'
+        );
+        $statement->execute([
+            ':user_id' => $userId,
+            ':token_hash' => $tokenHash,
+            ':expires_at' => $expiresAt,
+        ]);
+    } else {
+        $users = loadUsersFromJson();
+        $updated = false;
+        foreach ($users as $index => $storedUser) {
+            if ((int) ($storedUser['id'] ?? 0) !== $userId) {
+                continue;
+            }
+
+            $users[$index]['password_reset_hash'] = $tokenHash;
+            $users[$index]['password_reset_expires'] = $expiresAt;
+            $updated = true;
+        }
+
+        if (!$updated) {
+            return ['ok' => false, 'errors' => ['Kunne ikke lagre forespørselen om passordbytte.']];
+        }
+        saveUsersToJson($users);
+    }
+
+    $resetUrl = 'https://www.tresfjording.no/thoth/rediger/login.php?reset_token=' . rawurlencode($token);
+    $subject = 'Tilbakestill THOTH-passordet';
+    $message = "Bruk denne lenken for å velge et nytt passord. Lenken utløper om 30 minutter:\r\n\r\n"
+        . $resetUrl
+        . "\r\n\r\nHvis du ikke ba om dette, kan du se bort fra e-posten.";
+    $headers = "From: Tresfjording <post@tresfjording.no>\r\n"
+        . "Content-Type: text/plain; charset=UTF-8";
+    if (!mail((string) $user['email'], $subject, $message, $headers)) {
+        clearPasswordReset($userId);
+        error_log('THOTH password reset email delivery failed for user ID ' . $userId);
+    }
+
+    return ['ok' => true, 'errors' => []];
+}
+
+function completePasswordReset(string $token, string $newPassword): array
+{
+    if (!preg_match('/^[a-f0-9]{64}$/i', $token) || strlen($newPassword) < 8) {
+        return ['ok' => false, 'errors' => ['Lenken er ugyldig eller utløpt, eller passordet er for kort.']];
+    }
+
+    $tokenHash = hash('sha256', $token);
+    $pdo = getDatabase();
+    if ($pdo !== null) {
+        $statement = $pdo->prepare(
+            'SELECT user_id FROM password_resets WHERE token_hash = :token_hash AND expires_at > :now LIMIT 1'
+        );
+        $statement->execute([':token_hash' => $tokenHash, ':now' => time()]);
+        $reset = $statement->fetch();
+        if (!$reset) {
+            return ['ok' => false, 'errors' => ['Lenken er ugyldig eller utløpt, eller passordet er for kort.']];
+        }
+
+        $update = $pdo->prepare('UPDATE users SET password_hash = :password_hash WHERE id = :id');
+        $update->execute([
+            ':password_hash' => password_hash($newPassword, PASSWORD_DEFAULT),
+            ':id' => (int) $reset['user_id'],
+        ]);
+        clearPasswordReset((int) $reset['user_id']);
+        return ['ok' => true, 'errors' => []];
+    }
+
+    $users = loadUsersFromJson();
+    foreach ($users as $index => $user) {
+        if (
+            !hash_equals((string) ($user['password_reset_hash'] ?? ''), $tokenHash)
+            || (int) ($user['password_reset_expires'] ?? 0) <= time()
+        ) {
             continue;
         }
 
         $users[$index]['password_hash'] = password_hash($newPassword, PASSWORD_DEFAULT);
-        $updated = true;
+        unset($users[$index]['password_reset_hash'], $users[$index]['password_reset_expires']);
+        saveUsersToJson($users);
+        return ['ok' => true, 'errors' => []];
     }
 
-    if (!$updated) {
-        return ['ok' => false, 'errors' => ['Kunne ikke finne brukeren i lagringen.']];
-    }
-
-    saveUsersToJson($users);
-    return ['ok' => true, 'errors' => [], 'new_password' => $newPassword];
+    return ['ok' => false, 'errors' => ['Lenken er ugyldig eller utløpt, eller passordet er for kort.']];
 }
 
 function registerUser(string $username, string $password, string $firstName, string $lastName, string $email, string $phone = ''): array

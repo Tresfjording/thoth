@@ -16,6 +16,7 @@ const storageKey = "thoth-manuscript";
 const SETTINGS_STORAGE_KEY = "thoth-book-settings";
 const CHAPTER_STORAGE_KEY = "thoth-chapter-list";
 const POST_ID_KEY = "thoth-post-id";
+const CATEGORY_STORAGE_KEY = "thoth-categories";
 const newPostId = () => {
   const bytes = crypto.getRandomValues(new Uint8Array(4));
   return new Date().toISOString().slice(0, 10).replace(/-/g, "") + "-" + [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -37,9 +38,10 @@ const starterText = {
   body: "<p>Lim inn teksten din her.</p><p>Hvert tomrom mellom avsnitt blir bevart i visningen.</p>"
 };
 
-const allowedTags = new Set(["P", "BR", "STRONG", "B", "EM", "I", "U", "H3", "BLOCKQUOTE", "UL", "OL", "LI", "IMG", "FIGURE", "FIGCAPTION"]);
+const allowedTags = new Set(["P", "BR", "STRONG", "B", "EM", "I", "U", "A", "H3", "BLOCKQUOTE", "UL", "OL", "LI", "IMG", "FIGURE", "FIGCAPTION"]);
 const uploadedImagePattern = /^(?:https?:\/\/[^/\s"'<>]+)?\/?[\w/.-]*innlegg\/bilder\/[\w-]+\.(?:jpg|jpeg|png|gif|webp)$/i;
 const dataImagePattern = /^data:image\/(?:png|jpeg|gif|webp);base64,/i;
+const externalLinkPattern = /^https?:\/\/[^\s<>"']+$/i;
 const figureClassPattern = /^img-(?:wrap|align-(?:left|center|right)|size-(?:25|50|75|100))$/;
 let skippedWordImages = 0;
 
@@ -67,6 +69,23 @@ function sanitizeHtml(html, keepDataImages = false) {
       const classes = [...element.classList].filter((name) => figureClassPattern.test(name));
       [...element.attributes].forEach((attribute) => element.removeAttribute(attribute.name));
       if (classes.length) element.className = classes.join(" ");
+      return;
+    }
+    if (element.tagName === "A") {
+      const href = element.getAttribute("href") || "";
+      if (!/^https?:\/\//i.test(href) && !/^mailto:/i.test(href) && !/^\//.test(href) && !/^#/.test(href)) {
+        element.replaceWith(...element.childNodes);
+        return;
+      }
+      [...element.attributes].forEach((attribute) => {
+        const name = attribute.name.toLowerCase();
+        if (!["href", "target", "rel"].includes(name)) {
+          element.removeAttribute(attribute.name);
+        }
+      });
+      element.setAttribute("href", href);
+      element.setAttribute("target", "_blank");
+      element.setAttribute("rel", "noopener noreferrer");
       return;
     }
     if (element.tagName === "IMG") {
@@ -103,6 +122,33 @@ function sanitizeHtml(html, keepDataImages = false) {
       }
     });
   }
+  const textWalker = document.createTreeWalker(documentFragment.body, NodeFilter.SHOW_TEXT);
+  const textNodes = [];
+  while (textWalker.nextNode()) textNodes.push(textWalker.currentNode);
+  textNodes.forEach((textNode) => {
+    if (textNode.parentElement?.closest("a")) return;
+    const text = textNode.textContent || "";
+    if (!text.match(/https?:\/\/[^\s<>"']+/i)) return;
+    const fragment = document.createDocumentFragment();
+    let remaining = text;
+    while (remaining) {
+      const urlMatch = remaining.match(/https?:\/\/[^\s<>"']+/i);
+      if (!urlMatch || urlMatch.index === undefined) {
+        fragment.append(document.createTextNode(remaining));
+        break;
+      }
+      if (urlMatch.index > 0) fragment.append(document.createTextNode(remaining.slice(0, urlMatch.index)));
+      const url = urlMatch[0];
+      const link = document.createElement("a");
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = url;
+      fragment.append(link);
+      remaining = remaining.slice(urlMatch.index + url.length);
+    }
+    textNode.replaceWith(fragment);
+  });
   return documentFragment.body.innerHTML;
 }
 
@@ -114,6 +160,8 @@ function convertWordHtml(html) {
       return document.createTextNode(node.textContent || "");
     }
     if (!(node instanceof Element)) return null;
+
+    const sourceTag = node.tagName.toLowerCase();
 
     if (node.tagName === "IMG") {
       const src = node.getAttribute("src") || "";
@@ -128,6 +176,7 @@ function convertWordHtml(html) {
 
     const classNames = node.getAttribute("class") || "";
     const style = node.getAttribute("style") || "";
+    const href = sourceTag === "a" ? node.getAttribute("href") || "" : "";
     const headingParagraph = sourceTag === "p"
       && node.textContent.trim().length <= 200
       && (
@@ -150,9 +199,15 @@ function convertWordHtml(html) {
       blockquote: "blockquote",
       ul: "ul",
       ol: "ol",
-      li: "li"
+      li: "li",
+      a: "a"
     }[sourceTag] || (/^h[1-6]$/.test(sourceTag) ? "p" : "span"));
     const element = document.createElement(tagName);
+    if (sourceTag === "a" && href) {
+      element.setAttribute("href", href);
+      element.setAttribute("target", "_blank");
+      element.setAttribute("rel", "noopener noreferrer");
+    }
     const marker = wordListParagraph
       ? node.querySelector('span[style*="mso-list:Ignore"], span[style*="mso-list: Ignore"]')
       : null;
@@ -290,6 +345,19 @@ function escapeHtml(text) {
   })[character]);
 }
 
+function plainTextToHtml(text) {
+  const normalizedText = text.replace(/\r\n?/g, "\n").trim();
+  if (!normalizedText) return "";
+
+  return normalizedText
+    .split(/\n\s*\n/)
+    .map((paragraph) => {
+      const escapedParagraph = escapeHtml(paragraph).replace(/\n/g, "<br>");
+      return `<p>${escapedParagraph.replace(/(https?:\/\/[^\s<>"']+)/gi, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>')}</p>`;
+    })
+    .join("");
+}
+
 function getManuscript() {
   return Object.fromEntries(Object.entries(fields).map(([name, field]) => [name, field.value]));
 }
@@ -301,6 +369,72 @@ function setManuscript(manuscript) {
   setBodyHtml(manuscript.body || "");
   renderPreview();
 }
+
+async function loadCategories() {
+  const categoryField = document.querySelector("#category");
+  if (!categoryField) return [];
+
+  try {
+    const response = await fetch("categories-api.php", { cache: "no-store" });
+    if (!response.ok) throw new Error("Kunne ikke hente kategoriene.");
+    const payload = await response.json();
+    const categories = Array.isArray(payload.categories) ? payload.categories : [];
+    localStorage.setItem(CATEGORY_STORAGE_KEY, JSON.stringify(categories));
+    const storedManuscript = JSON.parse(localStorage.getItem(storageKey) || "null");
+    const selected = categoryField.value || storedManuscript?.category || "";
+    categoryField.replaceChildren(new Option("Uten kategori", ""));
+    categories.forEach((category) => categoryField.add(new Option(category, category)));
+    categoryField.value = categories.includes(selected) ? selected : "";
+    return categories;
+  } catch (error) {
+    saveStatus.textContent = error.message;
+    return [];
+  }
+}
+
+async function changeCategory(action, name, replacement = "") {
+  try {
+    const response = await fetch("categories-api.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, name, replacement })
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Kategorien kunne ikke lagres.");
+    await loadCategories();
+    if (result.category) document.querySelector("#category").value = result.category;
+    renderPreview();
+    saveStatus.textContent = result.message;
+  } catch (error) {
+    saveStatus.textContent = error.message;
+  }
+}
+
+document.querySelector("#new-category-button").addEventListener("click", () => {
+  const name = window.prompt("Navn på ny kategori:");
+  if (name?.trim()) changeCategory("add", name);
+});
+
+document.querySelector("#rename-category-button").addEventListener("click", () => {
+  const name = document.querySelector("#category").value;
+  if (!name) {
+    saveStatus.textContent = "Velg en kategori som skal endres.";
+    return;
+  }
+  const replacement = window.prompt("Nytt navn på kategorien:", name);
+  if (replacement?.trim()) changeCategory("rename", name, replacement);
+});
+
+document.querySelector("#delete-category-button").addEventListener("click", () => {
+  const name = document.querySelector("#category").value;
+  if (!name) {
+    saveStatus.textContent = "Velg en kategori som skal slettes.";
+    return;
+  }
+  if (window.confirm(`Slette kategorien «${name}»? Innleggene beholdes, men blir ukategoriserte.`)) {
+    changeCategory("delete", name);
+  }
+});
 
 function syncChapterJumpList() {
   const chapterJumpList = document.querySelector("#chapter-jump-list");
@@ -522,20 +656,37 @@ bodyEditor.addEventListener("paste", (event) => {
   if (!clipboard) return;
 
   const pastedImage = [...clipboard.files].find((file) => file.type.startsWith("image/"));
-  if (pastedImage && !clipboard.getData("text/plain").trim()) {
+  const html = clipboard.getData("text/html");
+  const plainText = clipboard.getData("text/plain").replace(/\r\n?/g, "\n");
+  const clipboardDebug = {
+    hasImage: Boolean(pastedImage),
+    imageName: pastedImage?.name || null,
+    imageType: pastedImage?.type || null,
+    hasHtml: Boolean(html),
+    htmlLength: html.length,
+    hasPlainText: Boolean(plainText.trim()),
+    plainTextLength: plainText.length,
+    htmlSnippet: html ? html.slice(0, 400).replace(/\s+/g, " ").trim() : "",
+    plainTextSnippet: plainText.slice(0, 200).trim(),
+    preferredSource: html ? "text/html" : plainText ? "text/plain" : "none"
+  };
+  window.thothClipboardDebug = clipboardDebug;
+  console.groupCollapsed("[Thoth clipboard]");
+  console.log("Clipboard snapshot:", clipboardDebug);
+  if (html) console.log("HTML snippet:", html.slice(0, 500));
+  if (plainText.trim()) console.log("Plain text snippet:", plainText.slice(0, 300));
+  console.groupEnd();
+
+  if (pastedImage && !plainText.trim()) {
     event.preventDefault();
     uploadAndInsertImage(pastedImage);
     return;
   }
 
-  const html = clipboard.getData("text/html");
   skippedWordImages = 0;
-  const plainText = clipboard.getData("text/plain").replace(/\r\n?/g, "\n");
   const richText = html ? convertWordHtml(html) : "";
   const pastedText = plainText.trim();
-  const pastedHtml = richText || (pastedText ? pastedText.split(/\n\s*\n/).map((paragraph) => (
-      `<p>${escapeHtml(paragraph).replace(/\n/g, "<br>")}</p>`
-    )).join("") : "");
+  const pastedHtml = richText || (pastedText ? plainTextToHtml(pastedText) : "");
   if (!pastedHtml) return;
 
   event.preventDefault();
@@ -918,17 +1069,39 @@ document.querySelector("#publish-button").addEventListener("click", async () => 
 });
 
 document.querySelector("#upload-text").addEventListener("change", async (event) => {
-  const file = event.target.files[0];
+  const input = event.currentTarget;
+  const file = input.files[0];
   if (!file) return;
 
-  const fileText = await file.text();
-  const isHtml = /\.html?$/i.test(file.name) || file.type === "text/html";
-  setBodyHtml(isHtml ? fileText : fileText.split(/\n\s*\n/).map((paragraph) => (
-    `<p>${escapeHtml(paragraph).replace(/\n/g, "<br>")}</p>`
-  )).join(""));
-  renderPreview();
-  saveStatus.textContent = `Lastet opp: ${file.name}`;
-  event.target.value = "";
+  let textImported = false;
+  input.disabled = true;
+  try {
+    const fileText = await file.text();
+    const isHtml = /\.html?$/i.test(file.name) || file.type === "text/html";
+    setBodyHtml(isHtml ? fileText : fileText.split(/\n\s*\n/).map((paragraph) => (
+      `<p>${escapeHtml(paragraph).replace(/\n/g, "<br>")}</p>`
+    )).join(""));
+    renderPreview();
+    textImported = true;
+    saveStatus.textContent = "Teksten er lest inn. Lagrer originalfila på GitHub ...";
+
+    const formData = new FormData();
+    formData.append("source_file", file, file.name);
+    const response = await fetch("upload-source-file.php", { method: "POST", body: formData });
+    const result = await response.json().catch(() => null);
+    if (!response.ok || !result?.ok) {
+      throw new Error(result?.error || "GitHub-opplasting mislyktes.");
+    }
+
+    saveStatus.textContent = `Teksten er lest inn, og originalfila er lagret på GitHub som ${result.name}. Klikk Publiser for å oppdatere One.com.`;
+  } catch (error) {
+    saveStatus.textContent = textImported
+      ? `Teksten er lest inn, men originalfila ble ikke lagret på GitHub: ${error.message}`
+      : `Kunne ikke lese fila: ${error.message}`;
+  } finally {
+    input.disabled = false;
+    input.value = "";
+  }
 });
 
 async function updateAuthStatus() {
@@ -971,6 +1144,9 @@ async function updateAuthStatus() {
 }
 
 const storedManuscript = JSON.parse(localStorage.getItem(storageKey) || "null");
+if (storedManuscript?.category) {
+  document.querySelector("#category").add(new Option(storedManuscript.category, storedManuscript.category));
+}
 setManuscript(storedManuscript || starterText);
 
 const postsDialog = document.createElement("div");
@@ -1037,12 +1213,14 @@ async function openPublishedPost(post) {
         body: doc.querySelector("article")?.innerHTML || ""
       };
     }
+    manuscript.category = manuscript.category || post.category || "";
     localStorage.setItem(POST_ID_KEY, post.id);
     setManuscript({
       title: manuscript.title || "",
       intro: manuscript.intro || "",
       author: manuscript.author || "",
       chapter: manuscript.chapter || "",
+      category: manuscript.category || "",
       body: manuscript.body || ""
     });
     postsDialog.hidden = true;
@@ -1079,3 +1257,4 @@ postsDialog.addEventListener("click", (event) => {
 updateAuthStatus();
 loadBookSettings();
 loadSavedChapters();
+loadCategories();

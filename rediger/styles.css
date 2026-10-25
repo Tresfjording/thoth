@@ -751,6 +751,14 @@ h2 {
   margin-top: 0;
 }
 
+.body-input a,
+.preview-body a {
+  color: inherit;
+  text-decoration-color: #ff0000;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.15em;
+}
+
 .chapter-jumper {
   position: sticky;
   top: 96px;

@@ -16,7 +16,7 @@
       <header class="site-header">
         <a class="brand" href="../index.html#top" aria-label="Gå til toppen">
           <span class="brand-mark">Thoth</span>
-          <span class="brand-subtitle">Tekstsamling</span>
+          <p class="reader-subtitle">    Thoth var en egyptisk visdomsgud og gudenes skriver.</p>
         </a>
         <div class="header-status">
           <div class="save-status" id="save-status" aria-live="polite">Lagret lokalt</div>
@@ -70,10 +70,27 @@
                     </div>
                   </div>
 
+                  <div class="field-row">
+                    <div>
+                      <label for="category">Kategori</label>
+                      <select id="category" name="category">
+                        <option value="">Uten kategori</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label>&nbsp;</label>
+                      <div class="text-field-actions">
+                        <button class="text-clear-button" id="new-category-button" type="button">Ny kategori</button>
+                        <button class="text-clear-button" id="rename-category-button" type="button">Endre kategori</button>
+                        <button class="text-delete-link" id="delete-category-button" type="button">Slett kategori</button>
+                      </div>
+                    </div>
+                  </div>
+
                   <div class="field-label-row">
                     <label for="body">Tekst</label>
                     <div class="text-field-actions">
-                      <label class="upload-button" for="upload-text">Last opp</label>
+                      <label class="upload-button" for="upload-text">Importer og lagre original</label>
                       <input id="upload-text" type="file" accept=".txt,.html,.htm,text/plain,text/html" hidden>
                       <button class="text-clear-button" id="heading-button" type="button" title="Gjør avsnittet der markøren står om til overskrift (Ctrl+Alt+3)">Overskrift</button>
                       <button class="text-clear-button" id="image-button" type="button" title="Sett inn bilde der markøren står">Bilde</button>
@@ -430,6 +447,6 @@ vår egen biologiske form en dag ikke lenger strekker til.</p>
         }
       })();
     </script>
-    <script src="script.js?v=20261007-13"></script>
+    <script src="script.js?v=20261014-1"></script>
   
 </body></html>

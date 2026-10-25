@@ -1,9 +1,11 @@
 <?php
 require __DIR__ . '/auth.php';
+header('Referrer-Policy: no-referrer');
 
 $errors = [];
 $successMessage = '';
-$mode = 'login';
+$resetToken = trim((string) ($_GET['reset_token'] ?? $_POST['reset_token'] ?? ''));
+$mode = $resetToken === '' ? 'login' : 'reset_password';
 
 if (isset($_GET['message']) && $_GET['message'] !== '') {
     $successMessage = trim((string) $_GET['message']);
@@ -40,10 +42,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $errors = $result['errors'];
             }
         }
-    } elseif ($mode === 'reset_password') {
-        $result = resetUserPassword((string) ($_POST['reset_username'] ?? ''), (string) ($_POST['reset_email'] ?? ''));
+    } elseif ($mode === 'request_reset') {
+        $result = requestPasswordReset((string) ($_POST['reset_username'] ?? ''), (string) ($_POST['reset_email'] ?? ''));
         if ($result['ok']) {
-            $successMessage = 'Nytt midlertidig passord: ' . $result['new_password'] . '. Endre det i profilen etter innlogging.';
+            $successMessage = 'Hvis opplysningene samsvarer med en konto, sendes en tilbakestillingslenke til e-postadressen. Kontakt administrator hvis du ikke mottar e-post.';
+            $mode = 'login';
+        } else {
+            $errors = $result['errors'];
+            $mode = 'request_reset';
+        }
+    } elseif ($mode === 'reset_password') {
+        $result = completePasswordReset($resetToken, (string) ($_POST['new_password'] ?? ''));
+        if ($result['ok']) {
+            $successMessage = 'Passordet er endret. Logg inn med det nye passordet.';
+            $resetToken = '';
             $mode = 'login';
         } else {
             $errors = $result['errors'];
@@ -67,6 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>THOTH | Logg inn</title>
+    <p class="reader-subtitle">Thoth var en egyptisk visdomsgud og gudenes skriver.</p>
     <style>
         :root {
             --bg: #f6efe8;
@@ -215,7 +228,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <button type="submit">Logg inn</button>
             </form>
-            <button type="button" class="inline-link" data-mode="reset_password">Glemt passord?</button>
+            <button type="button" class="inline-link" data-mode="request_reset">Glemt passord?</button>
         </section>
 
         <section class="panel <?php echo $mode === 'register' ? 'active' : ''; ?>" data-panel="register">
@@ -243,16 +256,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </form>
         </section>
 
-        <section class="panel <?php echo $mode === 'reset_password' ? 'active' : ''; ?>" data-panel="reset_password">
+        <section class="panel <?php echo $mode === 'request_reset' ? 'active' : ''; ?>" data-panel="request_reset">
             <form method="post" action="login.php<?php echo isset($_GET['next']) ? '?next=' . urlencode((string) $_GET['next']) : ''; ?>">
-                <input type="hidden" name="mode" value="reset_password">
+                <input type="hidden" name="mode" value="request_reset">
                 <label for="reset-username">Brukernavn</label>
                 <input id="reset-username" name="reset_username" type="text" autocomplete="username" required>
 
                 <label for="reset-email">E-post</label>
                 <input id="reset-email" name="reset_email" type="email" autocomplete="email" required>
 
-                <button type="submit">Nullstill passord</button>
+                <button type="submit">Send tilbakestillingslenke</button>
+            </form>
+        </section>
+
+        <section class="panel <?php echo $mode === 'reset_password' ? 'active' : ''; ?>" data-panel="reset_password">
+            <form method="post" action="login.php">
+                <input type="hidden" name="mode" value="reset_password">
+                <input type="hidden" name="reset_token" value="<?php echo htmlspecialchars($resetToken, ENT_QUOTES, 'UTF-8'); ?>">
+                <label for="new-password">Nytt passord</label>
+                <input id="new-password" name="new_password" type="password" autocomplete="new-password" minlength="8" required>
+
+                <button type="submit">Lagre nytt passord</button>
             </form>
         </section>
     </main>
@@ -263,7 +287,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         const panels = document.querySelectorAll('.panel');
 
         const openMode = (mode) => {
-            buttons.forEach((btn) => btn.classList.toggle('active', btn.dataset.mode === mode && mode !== 'reset_password'));
+            buttons.forEach((btn) => btn.classList.toggle('active', btn.dataset.mode === mode));
             panels.forEach((panel) => panel.classList.toggle('active', panel.dataset.panel === mode));
         };
 

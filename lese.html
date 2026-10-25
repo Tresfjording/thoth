@@ -1,6 +1,15 @@
 <!doctype html>
 <html lang="no">
   <head>
+    <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-GN3HBGKQRX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-GN3HBGKQRX');
+</script>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
@@ -51,9 +60,24 @@
         background: rgba(255,255,255,0.12);
       }
 
+      .reader-title-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
       .reader-header h1 {
         margin: 0;
         font-size: clamp(1.5rem, 2.6vw, 2.4rem);
+        line-height: 1.1;
+      }
+
+      .reader-subtitle {
+        margin: 0;
+        font-size: 0.35rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
       }
 
       .reader-actions {
@@ -76,8 +100,26 @@
         text-decoration: none;
       }
 
-      .reader-header a {
+      .reader-header a,
+      .category-link,
+      .protected-text a,
+      .chapter-button,
+      .reader-header a:visited,
+      .category-link:visited,
+      .protected-text a:visited,
+      .chapter-button:visited {
         color: var(--accent);
+        text-decoration: underline;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 0.12em;
+        text-decoration-skip-ink: auto;
+      }
+
+      .reader-header a:hover,
+      .category-link:hover,
+      .protected-text a:hover,
+      .chapter-button:hover {
+        text-decoration-thickness: 1.5px;
       }
 
       .reader-button {
@@ -118,22 +160,49 @@
       }
 
       .chapter-button {
+        display: block;
         width: 100%;
         padding: 12px 14px;
         border: 1px solid var(--line);
         border-radius: 12px;
         background: rgba(255,255,255,0.4);
-        color: var(--ink);
+        color: var(--accent);
         text-align: left;
         font: inherit;
         font-weight: 700;
+        text-decoration: underline;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 0.14em;
         cursor: pointer;
+      }
+
+      .chapter-button:visited {
+        color: var(--accent);
       }
 
       .chapter-button.is-active {
         background: var(--accent);
         border-color: var(--accent);
         color: white;
+        text-decoration-color: rgba(255,255,255,0.9);
+      }
+
+      .category-links {
+        display: grid;
+        gap: 8px;
+        margin: 0 0 18px;
+      }
+
+      .category-link {
+        color: var(--accent);
+        font-weight: 700;
+        text-decoration: underline;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 0.12em;
+      }
+
+      .category-link.is-active {
+        text-decoration-thickness: 1.5px;
       }
 
       .reader-body {
@@ -244,6 +313,26 @@
         color: var(--muted);
       }
 
+      .protected-text a {
+        color: var(--accent);
+        text-decoration: underline;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 0.15em;
+      }
+
+      .protected-text .post-link-title {
+        display: inline-block;
+        font-size: 1.15em;
+        font-weight: 700;
+      }
+
+      .protected-text .post-intro {
+        margin: 0 0 1.8em;
+        color: var(--muted);
+        font-size: 1.1rem;
+        line-height: 1.6;
+      }
+
       .protected-text small {
         color: var(--muted);
       }
@@ -310,16 +399,20 @@
   <body>
     <main class="reader-shell">
       <header class="reader-header">
-        <h1>Thoth</h1>
+        <div class="reader-title-wrap">
+          <h1>Skriveriet Thoth</h1>
+          <p class="reader-subtitle">Thoth var en egyptisk visdomsgud og gudenes skriver.</p>
+        </div>
         <div class="reader-actions">
           <button id="reading-mode-button" class="reader-button" type="button" aria-pressed="false">Lesemodus</button>
-          <a href="./index.html">Tilbake til inngang</a>
+          <a href="../index.html">Tilbake til Menyen</a>
         </div>
       </header>
 
       <div class="reader-layout">
         <aside class="reader-menu">
-          <h2>Publiserte dokument</h2>
+          <h2>Publiserte innlegg</h2>
+          <div id="category-links" class="category-links" aria-label="Kategorier"></div>
           <div id="chapter-menu" class="reader-menu-list" aria-live="polite"></div>
         </aside>
 
@@ -343,8 +436,55 @@
       const securityModal = document.getElementById('security-modal');
       const securityOk = document.getElementById('security-ok');
       const readingModeButton = document.getElementById('reading-mode-button');
+      const categoryLinks = document.getElementById('category-links');
       const homeUrl = 'https://www.tresfjording.no/thoth/index.html';
       const fallbackHomeUrl = './index.html';
+      const esc = (value) => String(value ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+      function linkifyTextUrls(html) {
+        const documentFragment = new DOMParser().parseFromString(html, 'text/html');
+        const textWalker = document.createTreeWalker(documentFragment.body, NodeFilter.SHOW_TEXT);
+        const textNodes = [];
+        while (textWalker.nextNode()) textNodes.push(textWalker.currentNode);
+
+        textNodes.forEach((textNode) => {
+          if (textNode.parentElement?.closest('a')) return;
+          const text = textNode.textContent || '';
+          if (!text.match(/https?:\/\/[^\s<>"']+/i)) return;
+
+          const fragment = document.createDocumentFragment();
+          let remaining = text;
+          while (remaining) {
+            const match = remaining.match(/https?:\/\/[^\s<>"']+/i);
+            if (!match || match.index === undefined) {
+              fragment.append(document.createTextNode(remaining));
+              break;
+            }
+            if (match.index > 0) fragment.append(document.createTextNode(remaining.slice(0, match.index)));
+            const link = document.createElement('a');
+            link.href = match[0];
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.textContent = match[0];
+            fragment.append(link);
+            remaining = remaining.slice(match.index + match[0].length);
+          }
+          textNode.replaceWith(fragment);
+        });
+
+        return documentFragment.body.innerHTML;
+      }
+
+      function renderCategoryLinks(posts, selectedCategory = '', includeAll = true) {
+        const categories = [...new Set(posts.map((post) => post.category).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'nb'));
+        const links = categories.map((category) =>
+            `<a class="category-link${selectedCategory === category ? ' is-active' : ''}" href="lese.html?kategori=${encodeURIComponent(category)}">${esc(category)}</a>`
+        );
+        if (includeAll) {
+          links.unshift(`<a class="category-link${selectedCategory === '' ? ' is-active' : ''}" href="lese.html">Alle</a>`);
+        }
+        categoryLinks.innerHTML = links.join('');
+      }
 
       const setReadingMode = (enabled) => {
         document.body.classList.toggle('reading-mode', enabled);
@@ -426,19 +566,23 @@
           return loadPublishedDocument('./arbeidskopi.html');
         }
 
-        const esc = (value) => String(value ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-        chapterMenu.innerHTML = posts.map((post) =>
-          `<a class="chapter-button" style="display:block;text-decoration:none" href="?innlegg=${encodeURIComponent(post.id)}">${esc(post.title || post.chapter || 'Uten tittel')}</a>`
-        ).join('');
-        protectedText.innerHTML = '<h2>Innlegg</h2>' + posts.map((post) => {
+        const selectedCategory = new URLSearchParams(window.location.search).get('kategori') || '';
+        renderCategoryLinks(posts, selectedCategory);
+        const visiblePosts = selectedCategory ? posts.filter((post) => post.category === selectedCategory) : posts;
+          chapterMenu.innerHTML = visiblePosts.map((post) =>
+          `<a class="chapter-button" href="?innlegg=${encodeURIComponent(post.id)}${post.category ? `&kategori=${encodeURIComponent(post.category)}` : ''}">${esc(post.title || post.chapter || 'Uten tittel')}</a>`
+          ).join('');
+          protectedText.innerHTML = '<h2>Innlegg</h2>' + visiblePosts.map((post) => {
           const date = post.published_at ? new Date(post.published_at).toLocaleDateString('nb-NO') : '';
-          return `<p><a href="?innlegg=${encodeURIComponent(post.id)}" style="color:var(--accent);text-decoration:none;font-weight:700;font-size:1.15em">${esc(post.title || post.chapter || 'Uten tittel')}</a>`
+          const category = post.category ? `<br><small>${esc(post.category)}</small>` : '';
+          return `<p><a href="?innlegg=${encodeURIComponent(post.id)}${post.category ? `&kategori=${encodeURIComponent(post.category)}` : ''}" class="post-link-title">${esc(post.title || post.chapter || 'Uten tittel')}</a>`
             + (date ? `<br><small>${esc(date)}</small>` : '')
+            + category
             + (post.intro ? `<br>${esc(post.intro)}` : '') + '</p>';
         }).join('');
       }
 
-      async function loadPublishedDocument(url) {
+      async function loadPublishedDocument(url, category = '', intro = '') {
         try {
           const response = await fetch(url, { cache: 'no-store' });
           if (!response.ok) {
@@ -447,6 +591,9 @@
 
           const html = await response.text();
           const doc = new DOMParser().parseFromString(html, 'text/html');
+          if (!intro) {
+            intro = doc.querySelector('main > p > em')?.textContent?.trim() || '';
+          }
           const headingNodes = [...doc.querySelectorAll('h3')].filter((heading) => {
             const title = heading.textContent.trim();
             return title && !/^Kapittel\s*\d*$/i.test(title);
@@ -476,18 +623,23 @@
 
             return {
               title: heading.textContent.trim(),
-              content: section.innerHTML || '<p>Innholdet er tomt.</p>'
+              content: linkifyTextUrls(section.innerHTML) || '<p>Innholdet er tomt.</p>'
             };
           });
 
           const renderSection = (index) => {
             const section = sections[index];
+            const introHtml = intro
+              ? `<p class="post-intro"><em>${esc(intro).replace(/\r?\n/g, '<br>')}</em></p>`
+              : '';
             chapterMenu.querySelectorAll('.chapter-button').forEach((button, buttonIndex) => {
               button.classList.toggle('is-active', buttonIndex === index);
             });
 
             protectedText.innerHTML = `
+              ${category ? `<p><small>Kategori: ${esc(category)}</small></p>` : ''}
               <h2>${section.title}</h2>
+              ${introHtml}
               ${section.content}
             `;
           };
@@ -516,7 +668,14 @@
         back.style.display = 'block';
         back.style.marginBottom = '12px';
         chapterMenu.parentElement.insertBefore(back, chapterMenu);
-        loadPublishedDocument('./innlegg/' + requestedPost + '.html');
+        fetch('./innlegg/index.json', { cache: 'no-store' })
+          .then((response) => response.ok ? response.json() : [])
+          .then((posts) => {
+            const post = Array.isArray(posts) ? posts.find((entry) => entry.id === requestedPost) : null;
+            renderCategoryLinks(Array.isArray(posts) ? posts : [], post?.category || '', false);
+            loadPublishedDocument('./innlegg/' + requestedPost + '.html', post?.category || '', post?.intro || '');
+          })
+          .catch(() => loadPublishedDocument('./innlegg/' + requestedPost + '.html'));
       } else {
         loadPostList();
       }

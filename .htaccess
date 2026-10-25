@@ -1,7 +1,14 @@
-RewriteEngine On
+# Protect the Thoth application and all files below this directory.
+# Create this file on the server; never commit it to the repository.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{HTTPS} !=on
+    RewriteRule ^ https://www.tresfjording.no%{REQUEST_URI} [R=301,L]
+</IfModule>
 
-# Send users back to the public landing page if they try to reach a Thoth subfolder or private path.
-RewriteRule ^thoth/(?!index\.html$).*$ /thoth/index.html [R=302,L,NE]
+AuthType Basic
+AuthName "Thoth"
+AuthUserFile "/customers/e/1/5/c6ksomeyl/webroots/www/thoth/.htpasswd"
 
 # Deny obvious scraper and scanner bots while allowing normal visitors and search engines.
 SetEnvIfNoCase User-Agent "^$" BadBot
@@ -10,12 +17,20 @@ SetEnvIfNoCase User-Agent "(curl|wget|python-requests|python-urllib|libwww-perl|
 
 <IfModule mod_authz_core.c>
     <RequireAll>
-        Require all granted
+        Require valid-user
         Require not env BadBot
     </RequireAll>
 </IfModule>
 
+# The published reading page is intentionally public.
+<FilesMatch "^lese\.html$">
+    Require all granted
+</FilesMatch>
+
 # If your host is on Apache 2.2 instead of 2.4, you can use this alternative instead:
 # Order allow,deny
-# Allow from all
+# AuthType Basic
+# AuthName "Thoth"
+# AuthUserFile "/customers/e/1/5/c6ksomeyl/webroots/www/thoth/.htpasswd"
+# Require valid-user
 # Deny from env=BadBot

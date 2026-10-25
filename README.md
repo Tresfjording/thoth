@@ -2,6 +2,23 @@
 
 Et enkelt, statisk bokverksted for å skrive og strukturere egne tekster.
 
+## Tilgangsbeskyttelse
+
+`thoth/.htaccess` krever brukernavn og passord for hele `/thoth`-mappen,
+inkludert undermapper og filer. Den publiserte lesesiden
+`/thoth/lese.html` er eneste unntak og er offentlig tilgjengelig.
+Filen videresender også HTTP-trafikk til HTTPS. Brukerpassord lagres som
+passordhash, og passordtilbakestilling sender en tidsbegrenset engangslenke
+til kontoens e-postadresse. E-postsending må være aktivert på serveren.
+
+Opprett `.htpasswd` på serveren i:
+
+`/customers/e/1/5/c6ksomeyl/webroots/www/thoth/.htpasswd`
+
+Ikke legg `.htpasswd` i dette prosjektet eller i en offentlig tilgjengelig
+mappe. Hvis filen ikke finnes på serveren, vil beskyttede sider ikke kunne
+åpnes.
+
 ## Filer
 
 - `index.html` inneholder strukturen på siden.
@@ -22,7 +39,7 @@ selve Thoth-siden eller innloggingsdataene dine.
 
 1. Åpne `publish.php` og bytt ut `CHANGE_THIS_TO_A_LONG_RANDOM_KEY` med en lang, hemmelig nøkkel.
 2. Last opp prosjektets hoved-`index.html` til mappen `thoth` på One.com. Den viser status dersom ingen bok er publisert ennå.
-3. Last opp `rediger/index.html`, `rediger/styles.css`, `rediger/script.js` og `rediger/publish.php` til undermappen `thoth/rediger/`.
+3. Last opp `rediger/index.html`, `rediger/styles.css`, `rediger/script.js`, `rediger/publish.php` og `rediger/upload-source-file.php` til undermappen `thoth/rediger/`.
 4. Åpne redigeringssiden via `https://www.tresfjording.no/thoth/rediger/`.
 5. Trykk **Publiser arbeidskopi** og skriv inn den samme nøkkelen.
 6. Åpne lenken **Åpne publisert arbeidskopi** som vises etterpå. Publikum bruker `https://www.tresfjording.no/thoth/`.
@@ -34,6 +51,24 @@ En lesbar sluttproduktside opprettes som `arbeidskopi.html` i `thoth`-mappen.
 Ingen JSON-kopi eller editorfiler lastes opp av publiseringsknappen. Mappen må ha skrivetilgang for PHP. Ikke del
 publiseringsnøkkelen offentlig. Publisering må gjøres fra redigeringssiden på One.com, ikke fra
 en lokal `file:///`-åpning.
+
+### Import av manusfiler og GitHub-kopi
+
+Knappen **Importer og lagre original** leser `.txt`-, `.html`- eller `.htm`-fila
+inn i editoren og sender i tillegg originalinnholdet til `Tresfjording/tresfjording`
+på `master`, under `thoth/uploads/`. GitHub-opplastingen lager en commit, så denne
+delen kan ta noen sekunder. Fila er offentlig tilgjengelig i det offentlige repoet.
+HTML- og HTM-filer lagres med `.txt` lagt til filnavnet, slik at de ikke kan kjøres
+som nettsider på samme domene. Innholdet i fila endres ikke.
+
+Dette publiserer ikke automatisk teksten på One.com. Kontroller teksten i editoren
+og trykk **Publiser** for å oppdatere nettstedet.
+
+For å aktivere GitHub-kopien må serveren ha miljøvariabelen `THOTH_GITHUB_TOKEN`
+med en GitHub fine-grained personal access token som har **Contents: Read and write**
+kun for `Tresfjording/tresfjording`. Sett tokenet i serverkonfigurasjonen på One.com;
+ikke legg det i Git, PHP-kildekode eller nettleseren. Opplastingen returnerer en
+tydelig feil hvis tokenet mangler eller GitHub avviser fila.
 
 Mellomtitler formatert som `h2` i manus blir automatisk til kapitler i venstremenyen
 på sluttproduktsiden. Klikk på et kapittel for å hoppe til riktig sted i teksten.
